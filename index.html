@@ -10,6 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
+    <!-- אייקון האפליקציה למסך הבית באייפון בלבד -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3043/3043236.png">
+    
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -47,10 +50,7 @@
             flex-direction: column;
         }
 
-        h1, h2, h3 {
-            text-align: center;
-            margin-top: 0;
-        }
+        h1, h2, h3 { text-align: center; margin-top: 0; }
 
         .streak-banner {
             background: #fffbe3;
@@ -65,9 +65,24 @@
             color: #b45309;
         }
 
-        .streak-count {
-            font-size: 22px;
-            color: var(--streak-color);
+        .streak-count { font-size: 22px; color: var(--streak-color); }
+
+        .reminder-alert {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
 
         .level-selector-box {
@@ -93,24 +108,10 @@
             transition: background 0.2s;
         }
 
-        .btn:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .btn-secondary {
-            background-color: #6b7280;
-        }
-
-        .btn-accent {
-            background-color: var(--accent);
-            width: auto;
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: #6b7280; }
+        .btn-accent { background-color: var(--accent); width: auto; padding: 8px 16px; font-size: 14px; }
+        .hidden { display: none !important; }
 
         .menu-options {
             display: flex;
@@ -149,19 +150,9 @@
             margin-bottom: 10px;
         }
 
-        .exercise-info {
-            max-width: 70%;
-        }
-
-        .exercise-title {
-            font-weight: bold;
-            display: block;
-        }
-
-        .exercise-sub {
-            font-size: 13px;
-            color: var(--subtext);
-        }
+        .exercise-info { max-width: 70%; }
+        .exercise-title { font-weight: bold; display: block; }
+        .exercise-sub { font-size: 13px; color: var(--subtext); }
 
         .timer-modal {
             position: fixed;
@@ -185,21 +176,10 @@
             max-width: 340px;
         }
 
-        .timer-display {
-            font-size: 56px;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-
+        .timer-display { font-size: 56px; font-weight: bold; margin: 15px 0; }
         .timer-display.work { color: var(--work-color); }
         .timer-display.rest { color: var(--rest-color); }
-
-        .set-counter {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--subtext);
-            margin-bottom: 5px;
-        }
+        .set-counter { font-size: 18px; font-weight: bold; color: var(--subtext); margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -209,6 +189,11 @@
     <div class="streak-banner">
         <span>🔥 רצף יומיומי (Streak):</span>
         <span id="streak-display" class="streak-count">0 ימים</span>
+    </div>
+
+    <!-- באנר תזכורת חירום -->
+    <div id="reminder-alert-box" class="reminder-alert hidden">
+        🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥
     </div>
 
     <!-- מסך ראשי -->
@@ -237,7 +222,6 @@
     <div id="workout-screen" class="hidden">
         <h2>אימון יומי 🏋️</h2>
 
-        <!-- בחירת רמת קושי בתוך מסך האימון בלבד -->
         <div class="level-selector-box">
             <label for="workout-level-select" style="font-weight: bold; display: block; margin-bottom: 6px;">🎯 דרגת קושי לאימון:</label>
             <select id="workout-level-select" onchange="changeFitnessLevel(this.value)">
@@ -270,8 +254,9 @@
         <p style="text-align: center; color: var(--subtext);">בחר באיזו שעה תרצה לקבל תזכורת להתאמן ולשמור על ה-Streak:</p>
         <input type="time" id="notif-time" value="16:00">
         <button class="btn" onclick="setDailyReminder()">שמור התראה</button>
-        <div id="notif-status" style="text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--accent);"></div>
-        <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+        <button class="btn btn-accent" style="width: 100%; margin-top: 5px;" onclick="testNotification()">בדוק התראה עכשיו 🔔</button>
+        <div id="notif-status" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 </div>
 
@@ -333,19 +318,29 @@
 
     // --- REMINDERS & NOTIFICATIONS ---
     function setDailyReminder() {
+        const time = document.getElementById('notif-time').value;
+        localStorage.setItem('reminder_time', time);
+
         if ("Notification" in window) {
             Notification.requestPermission().then(permission => {
                 if (permission === "granted") {
-                    const time = document.getElementById('notif-time').value;
-                    localStorage.setItem('reminder_time', time);
                     document.getElementById('notif-status').innerText = `✓ התראה הוגדרה לשעה ${time}`;
-                    scheduleNotificationCheck();
                 } else {
-                    alert("יש לאשר הרשאות התראה בהגדרות הנייד.");
+                    document.getElementById('notif-status').innerText = `✓ תזכורת הוגדרה לשעה ${time} (תוך-אפליקציה)`;
                 }
             });
         } else {
-            alert("הדפדפן אינו תומך בהתראות.");
+            document.getElementById('notif-status').innerText = `✓ תזכורת הוגדרה לשעה ${time}`;
+        }
+    }
+
+    function testNotification() {
+        playBeep(880, 0.6);
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("המאמן האישי 🏋️‍♂️", { body: "בדיקת התראה עובדת מצוין!" });
+        } else {
+            document.getElementById('reminder-alert-box').classList.remove('hidden');
+            alert("🔔 בדיקת התראה: זמן להתאמן!");
         }
     }
 
@@ -359,14 +354,17 @@
             const lastNotif = localStorage.getItem('last_notif_sent');
 
             if (currentTime === savedTime && lastNotif !== now.toDateString()) {
-                if (Notification.permission === "granted") {
+                playBeep(880, 0.8);
+                document.getElementById('reminder-alert-box').classList.remove('hidden');
+
+                if ("Notification" in window && Notification.permission === "granted") {
                     new Notification("המאמן האישי 🏋️‍♂️", {
                         body: "זמן להתאמן! היכנס כדי לשמור על ה-Streak שלך 🔥"
                     });
-                    localStorage.setItem('last_notif_sent', now.toDateString());
                 }
+                localStorage.setItem('last_notif_sent', now.toDateString());
             }
-        }, 30000);
+        }, 15000);
     }
 
     // --- MEAL DATA ---
