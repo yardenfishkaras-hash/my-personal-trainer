@@ -108,7 +108,6 @@
             margin-top: 15px;
         }
 
-        /* תיקון מלא של שדות הקלט שיישבו ברוחב מלא ובמרכז בלי לזלוג לצד */
         input[type="time"], input[type="number"], input[type="text"], select {
             width: 100% !important;
             max-width: 100% !important;
@@ -187,6 +186,35 @@
             margin-bottom: 10px;
             text-align: right;
         }
+
+        /* עיצוב חלון הטיימר הצף */
+        .timer-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .timer-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            width: 85%;
+            max-width: 340px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .timer-display { font-size: 56px; font-weight: bold; margin: 15px 0; }
+        .timer-display.work { color: var(--work-color); }
+        .timer-display.rest { color: var(--rest-color); }
+        .set-counter { font-size: 18px; font-weight: bold; color: var(--subtext); margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -198,7 +226,7 @@
     </div>
 
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
-        <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטสאפ 💚</span>
+        <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
     </div>
 
     <!-- מסך ראשי -->
@@ -294,7 +322,7 @@
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מחשבון BMI (עם שורת מגדר מוחזרת!) -->
+    <!-- מחשבון BMI -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
         <label style="display:block; text-align:right; font-weight:bold;">מגדר:</label>
@@ -319,6 +347,21 @@
         <input type="time" id="notif-time" value="16:00">
         <button class="btn" onclick="setDailyReminder()">שמור התראה</button>
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+    </div>
+</div>
+
+<!-- חלון טיימר צף (Modal) שמופעל בלחיצה על תרגיל -->
+<div id="timer-modal" class="timer-modal hidden">
+    <div class="timer-content">
+        <h3 id="modal-exercise-name" style="margin-bottom: 5px;">שם התרגיל</h3>
+        <div id="modal-set-counter" class="set-counter">סט 1 מתוך 3</div>
+        <div id="modal-phase-title" style="font-weight: bold; color: var(--work-color); font-size: 18px;">זמן עבודה 🔥</div>
+        <div id="timer-display" class="timer-display work">00:00</div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn" style="background-color: #10b981; margin:0; flex:1;" onclick="pauseResumeTimer()">השהה / המשך</button>
+            <button class="btn btn-secondary" style="margin:0; flex:1;" onclick="closeTimerModal()">סגור</button>
+        </div>
     </div>
 </div>
 
@@ -482,7 +525,7 @@
         loadWorkout();
     }
 
-    // רשימת התרגילים המלאה שחזרה למקום!
+    // רשימת התרגילים המלאה
     const rawWorkouts = {
         1: { title: "יום ראשון: כוח עליון + אירובי קל", exercises: [
             { name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "10 חזרות" }, level2: { sets: 3, work: 40, rest: 50, reps: "12 חזרות" }, level3: { sets: 4, work: 45, rest: 45, reps: "15 חזרות" }, level4: { sets: 4, work: 50, rest: 40, reps: "18 חזרות" }, level5: { sets: 5, work: 60, rest: 30, reps: "20 חזרות" } },
@@ -510,15 +553,111 @@
         const data = rawWorkouts[day];
         const container = document.getElementById('workout-list');
         let html = `<h3 style="margin-top:15px; font-size:16px;">${data.title}</h3>`;
-        data.exercises.forEach(ex => {
+        
+        data.exercises.forEach((ex, idx) => {
             if (ex.isRestDay) {
                 html += `<div class="exercise-item"><span style="font-weight:bold; width:100%; text-align:center;">🧘‍♂️ ${ex.name}</span></div>`;
             } else {
                 const lvl = ex[currentLevel] || ex.level1;
-                html += `<div class="exercise-item"><span><b>${ex.name}</b></span><span style="color:var(--primary); font-weight:bold;">${lvl.sets} סטים • ${lvl.reps}</span></div>`;
+                html += `
+                    <div class="exercise-item">
+                        <div>
+                            <b>${ex.name}</b><br>
+                            <span style="color:var(--primary); font-weight:bold; font-size: 13px;">${lvl.sets} סטים • ${lvl.reps}</span>
+                        </div>
+                        <button class="btn" style="width: auto; margin: 0; padding: 8px 12px; font-size: 13px;" onclick='startExerciseTimer(${JSON.stringify(ex.name)}, ${JSON.stringify(lvl)})'>⏱️ הפעל</button>
+                    </div>`;
             }
         });
         container.innerHTML = html;
+    }
+
+    // לוגיקת הטיימר והחלון הצף
+    let timerInterval = null;
+    let currentTimerState = {};
+
+    function startExerciseTimer(exName, lvl) {
+        currentTimerState = {
+            name: exName,
+            sets: lvl.sets,
+            currentSet: 1,
+            workTime: lvl.work,
+            restTime: lvl.rest,
+            timeLeft: lvl.work,
+            isWork: true,
+            isPaused: false
+        };
+
+        document.getElementById('modal-exercise-name').innerText = exName;
+        updateTimerModalUI();
+        document.getElementById('timer-modal').classList.remove('hidden');
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(runTimerStep, 1000);
+    }
+
+    function updateTimerModalUI() {
+        document.getElementById('modal-set-counter').innerText = `סט ${currentTimerState.currentSet} מתוך ${currentTimerState.sets}`;
+        const phaseEl = document.getElementById('modal-phase-title');
+        const displayEl = document.getElementById('timer-display');
+
+        const mins = Math.floor(currentTimerState.timeLeft / 60);
+        const secs = currentTimerState.timeLeft % 60;
+        displayEl.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        if (currentTimerState.isWork) {
+            phaseEl.innerText = "זמן עבודה 🔥";
+            phaseEl.style.color = "var(--work-color)";
+            displayEl.className = "timer-display work";
+        } else {
+            phaseEl.innerText = "זמן מנוחה ☕";
+            phaseEl.style.color = "var(--rest-color)";
+            displayEl.className = "timer-display rest";
+        }
+    }
+
+    function runTimerStep() {
+        if (currentTimerState.isPaused) return;
+
+        if (currentTimerState.timeLeft > 0) {
+            currentTimerState.timeLeft--;
+            updateTimerModalUI();
+        } else {
+            // הסתיים שלב (עבודה או מנוחה)
+            if (currentTimerState.isWork) {
+                if (currentTimerState.restTime > 0 && currentTimerState.currentSet < currentTimerState.sets) {
+                    currentTimerState.isWork = false;
+                    currentTimerState.timeLeft = currentTimerState.restTime;
+                    updateTimerModalUI();
+                } else {
+                    nextSetOrFinish();
+                }
+            } else {
+                nextSetOrFinish();
+            }
+        }
+    }
+
+    function nextSetOrFinish() {
+        if (currentTimerState.currentSet < currentTimerState.sets) {
+            currentTimerState.currentSet++;
+            currentTimerState.isWork = true;
+            currentTimerState.timeLeft = currentTimerState.workTime;
+            updateTimerModalUI();
+        } else {
+            clearInterval(timerInterval);
+            alert("כל הכבוד! סיימת את התרגיל בהצלחה! 💪");
+            closeTimerModal();
+        }
+    }
+
+    function pauseResumeTimer() {
+        currentTimerState.isPaused = !currentTimerState.isPaused;
+    }
+
+    function closeTimerModal() {
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById('timer-modal').classList.add('hidden');
     }
 
     function showScreen(screenId) {
