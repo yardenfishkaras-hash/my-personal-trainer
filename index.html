@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
     <!-- אייקון האפליקציה למסך הבית באייפון -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+    <link rel="apple-touch-icon" href="icon.png?v=2">
     
     <style>
         :root {
@@ -127,7 +127,6 @@
             margin-top: 15px;
         }
 
-        /* תיקון לשדות קלט */
         input[type="time"], input[type="number"], select {
             width: 100% !important;
             max-width: 100% !important;
@@ -195,7 +194,6 @@
         .timer-display.rest { color: var(--rest-color); }
         .set-counter { font-size: 18px; font-weight: bold; color: var(--subtext); margin-bottom: 5px; }
 
-        /* סגנון לסרגל התקדמות הצעדים */
         .progress-bar-bg {
             background-color: #e5e7eb;
             border-radius: 10px;
@@ -234,8 +232,6 @@
         <div class="menu-options">
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
-
-            <!-- כפתור מד צעדים חדש -->
             <button class="btn" onclick="showScreen('steps-screen')" style="background-color: #06b6d4;">👟 מד צעדים יומי</button>
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
@@ -283,7 +279,7 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מסך מד צעדים -->
+    <!-- מסך מד צעדים משופר -->
     <div id="steps-screen" class="hidden">
         <h2>מד צעדים יומי 👟</h2>
         <div class="card" style="text-align: center;">
@@ -295,10 +291,11 @@
                 <div id="step-progress-fill" class="progress-bar-fill"></div>
             </div>
 
-            <div id="sensor-status-msg" style="font-size: 12px; color: var(--subtext); margin-top: 6px;"></div>
+            <div id="sensor-status-msg" style="font-size: 12px; color: var(--accent); margin-top: 6px; font-weight: bold;"></div>
         </div>
 
-        <button class="btn" style="background-color: #06b6d4;" onclick="requestStepSensor()">הפעל מעקב חיישן תנועה 📱</button>
+        <!-- כפתור אישור החיישן שייעלם לאחר לחיצה -->
+        <button id="sensor-permission-btn" class="btn" style="background-color: #06b6d4;" onclick="requestStepSensor()">הפעל מעקב חיישן תנועה 📱</button>
 
         <div class="card">
             <h4 style="margin: 0 0 8px 0; text-align: center;">הוסף צעדים ידנית:</h4>
@@ -362,11 +359,12 @@
 </div>
 
 <script>
-    // --- STEP COUNTER ENGINE ---
+    // --- ACCURATE STEP COUNTER ENGINE ---
     let dailySteps = 0;
     const STEP_GOAL = 10000;
     let lastAccel = { x: 0, y: 0, z: 0 };
     let isTracking = false;
+    let lastStepTime = 0;
 
     function initSteps() {
         const todayStr = new Date().toDateString();
@@ -380,6 +378,14 @@
             dailySteps = parseInt(localStorage.getItem('daily_steps') || '0', 10);
         }
         updateStepsUI();
+
+        // בדיקה האם כבר אושר בעבר כדי להעלים את הכפתור אוטומטית
+        if (localStorage.getItem('sensor_granted') === 'true') {
+            startMotionTracking();
+            const btn = document.getElementById('sensor-permission-btn');
+            if (btn) btn.classList.add('hidden');
+            document.getElementById('sensor-status-msg').innerText = "✓ מד הצעדים פעיל ברקע (באפליקציה פתוחה)";
+        }
     }
 
     function updateStepsUI() {
@@ -399,26 +405,30 @@
     }
 
     function requestStepSensor() {
-        const statusDiv = document.getElementById('sensor-status-msg');
-        
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
             DeviceMotionEvent.requestPermission()
                 .then(response => {
                     if (response === 'granted') {
+                        localStorage.setItem('sensor_granted', 'true');
                         startMotionTracking();
-                        statusDiv.innerText = "✓ חיישן תנועה מחובר ופעיל!";
+                        const btn = document.getElementById('sensor-permission-btn');
+                        if (btn) btn.classList.add('hidden');
+                        document.getElementById('sensor-status-msg').innerText = "✓ חיישן תנועה מחובר ופעיל!";
                     } else {
-                        statusDiv.innerText = "❌ ההרשאה לחיישן תנועה נדחתה.";
+                        document.getElementById('sensor-status-msg').innerText = "❌ ההרשאה לחיישן תנועה נדחתה.";
                     }
                 })
                 .catch(() => {
-                    statusDiv.innerText = "שגיאה בחיבור לחיישן.";
+                    document.getElementById('sensor-status-msg').innerText = "שגיאה בחיבור לחיישן.";
                 });
         } else if ('DeviceMotionEvent' in window) {
+            localStorage.setItem('sensor_granted', 'true');
             startMotionTracking();
-            statusDiv.innerText = "✓ חיישן תנועה מחובר!";
+            const btn = document.getElementById('sensor-permission-btn');
+            if (btn) btn.classList.add('hidden');
+            document.getElementById('sensor-status-msg').innerText = "✓ חיישן תנועה מחובר!";
         } else {
-            statusDiv.innerText = "המכשיר אינו תומך בחיישני תנועה אלו. ניתן להוסיף צעדים ידנית!";
+            document.getElementById('sensor-status-msg').innerText = "המכשיר אינו תומך בחיישן תנועה אוטומטי.";
         }
     }
 
@@ -434,9 +444,13 @@
             const deltaY = Math.abs(acc.y - lastAccel.y);
             const deltaZ = Math.abs(acc.z - lastAccel.z);
 
-            // זיהוי תנועה משמעותית של פסיעה
-            if (deltaX + deltaY + deltaZ > 12) {
+            // סף תנועה משופר ואמינות גבוהה יותר (מונע ספירת שווא מרעידות קלות)
+            const totalMovement = deltaX + deltaY + deltaZ;
+            const now = Date.now();
+
+            if (totalMovement > 15 && (now - lastStepTime) > 300) { 
                 dailySteps++;
+                lastStepTime = now;
                 localStorage.setItem('daily_steps', dailySteps.toString());
                 updateStepsUI();
             }
@@ -508,7 +522,6 @@
         let category = "";
         let color = "";
         let advice = "";
-
         const isYouth = age < 18;
 
         if (bmi < (isYouth ? 17.5 : 18.5)) {
@@ -588,7 +601,7 @@
 
             const now = new Date();
             const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            const lastNotif = localStorage.setItem('last_notif_sent');
+            const lastNotif = localStorage.getItem('last_notif_sent');
 
             if (currentTime === savedTime && lastNotif !== now.toDateString()) {
                 isTestingNotif = false;
@@ -960,7 +973,6 @@
         document.getElementById('timer-modal').classList.add('hidden');
     }
 
-    // פונקציית צליל
     function playBeep(freq = 600, duration = 0.5) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
