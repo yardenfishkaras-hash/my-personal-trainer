@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
     <!-- אייקון האפליקציה למסך הבית באייפון -->
-    <link rel="apple-touch-icon" href="icon.png?v=2">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
     
     <style>
         :root {
@@ -127,7 +127,7 @@
             margin-top: 15px;
         }
 
-        /* תיקון מקיף לשדות קלט ב-iOS Safari */
+        /* תיקון לשדות קלט */
         input[type="time"], input[type="number"], select {
             width: 100% !important;
             max-width: 100% !important;
@@ -142,7 +142,7 @@
             color: var(--text-color);
             -webkit-appearance: none;
             appearance: none;
-            direction: ltr; /* יישור מספרים */
+            direction: ltr;
         }
 
         .card {
@@ -194,6 +194,22 @@
         .timer-display.work { color: var(--work-color); }
         .timer-display.rest { color: var(--rest-color); }
         .set-counter { font-size: 18px; font-weight: bold; color: var(--subtext); margin-bottom: 5px; }
+
+        /* סגנון לסרגל התקדמות הצעדים */
+        .progress-bar-bg {
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            height: 16px;
+            width: 100%;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar-fill {
+            background-color: #06b6d4;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -205,7 +221,7 @@
         <span id="streak-display" class="streak-count">0 ימים</span>
     </div>
 
-    <!-- באנר תזכורת חירום לחיץ לסגירה -->
+    <!-- באנר תזכורת חירום -->
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="dismissReminder()">
         <span id="reminder-alert-text">🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥</span>
         <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ כאן לסגירה)</div>
@@ -218,6 +234,9 @@
         <div class="menu-options">
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
+
+            <!-- כפתור מד צעדים חדש -->
+            <button class="btn" onclick="showScreen('steps-screen')" style="background-color: #06b6d4;">👟 מד צעדים יומי</button>
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
         </div>
@@ -264,7 +283,33 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מסך מחשבון BMI מורחב -->
+    <!-- מסך מד צעדים -->
+    <div id="steps-screen" class="hidden">
+        <h2>מד צעדים יומי 👟</h2>
+        <div class="card" style="text-align: center;">
+            <div style="font-size: 14px; color: var(--subtext);">צעדים שביצעת היום:</div>
+            <div id="step-count-display" style="font-size: 52px; font-weight: bold; color: #06b6d4; margin: 8px 0;">0</div>
+            <div style="font-size: 13px; color: var(--subtext);">יעד יומי: 10,000 צעדים</div>
+            
+            <div class="progress-bar-bg">
+                <div id="step-progress-fill" class="progress-bar-fill"></div>
+            </div>
+
+            <div id="sensor-status-msg" style="font-size: 12px; color: var(--subtext); margin-top: 6px;"></div>
+        </div>
+
+        <button class="btn" style="background-color: #06b6d4;" onclick="requestStepSensor()">הפעל מעקב חיישן תנועה 📱</button>
+
+        <div class="card">
+            <h4 style="margin: 0 0 8px 0; text-align: center;">הוסף צעדים ידנית:</h4>
+            <input type="number" id="manual-steps-input" placeholder="כמה צעדים להוסיף?" min="1">
+            <button class="btn" style="background-color: #10b981; margin-bottom: 0;" onclick="addManualSteps()">+ הוסף צעדים</button>
+        </div>
+
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+    </div>
+
+    <!-- מסך מחשבון BMI -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
@@ -317,6 +362,89 @@
 </div>
 
 <script>
+    // --- STEP COUNTER ENGINE ---
+    let dailySteps = 0;
+    const STEP_GOAL = 10000;
+    let lastAccel = { x: 0, y: 0, z: 0 };
+    let isTracking = false;
+
+    function initSteps() {
+        const todayStr = new Date().toDateString();
+        const savedDate = localStorage.getItem('steps_date');
+        
+        if (savedDate !== todayStr) {
+            dailySteps = 0;
+            localStorage.setItem('steps_date', todayStr);
+            localStorage.setItem('daily_steps', '0');
+        } else {
+            dailySteps = parseInt(localStorage.getItem('daily_steps') || '0', 10);
+        }
+        updateStepsUI();
+    }
+
+    function updateStepsUI() {
+        document.getElementById('step-count-display').innerText = dailySteps.toLocaleString();
+        const fillPercent = Math.min(100, (dailySteps / STEP_GOAL) * 100);
+        document.getElementById('step-progress-fill').style.width = fillPercent + '%';
+    }
+
+    function addManualSteps() {
+        const val = parseInt(document.getElementById('manual-steps-input').value, 10);
+        if (val && val > 0) {
+            dailySteps += val;
+            localStorage.setItem('daily_steps', dailySteps.toString());
+            updateStepsUI();
+            document.getElementById('manual-steps-input').value = '';
+        }
+    }
+
+    function requestStepSensor() {
+        const statusDiv = document.getElementById('sensor-status-msg');
+        
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission()
+                .then(response => {
+                    if (response === 'granted') {
+                        startMotionTracking();
+                        statusDiv.innerText = "✓ חיישן תנועה מחובר ופעיל!";
+                    } else {
+                        statusDiv.innerText = "❌ ההרשאה לחיישן תנועה נדחתה.";
+                    }
+                })
+                .catch(() => {
+                    statusDiv.innerText = "שגיאה בחיבור לחיישן.";
+                });
+        } else if ('DeviceMotionEvent' in window) {
+            startMotionTracking();
+            statusDiv.innerText = "✓ חיישן תנועה מחובר!";
+        } else {
+            statusDiv.innerText = "המכשיר אינו תומך בחיישני תנועה אלו. ניתן להוסיף צעדים ידנית!";
+        }
+    }
+
+    function startMotionTracking() {
+        if (isTracking) return;
+        isTracking = true;
+
+        window.addEventListener('devicemotion', (event) => {
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
+
+            const deltaX = Math.abs(acc.x - lastAccel.x);
+            const deltaY = Math.abs(acc.y - lastAccel.y);
+            const deltaZ = Math.abs(acc.z - lastAccel.z);
+
+            // זיהוי תנועה משמעותית של פסיעה
+            if (deltaX + deltaY + deltaZ > 12) {
+                dailySteps++;
+                localStorage.setItem('daily_steps', dailySteps.toString());
+                updateStepsUI();
+            }
+
+            lastAccel = { x: acc.x || 0, y: acc.y || 0, z: acc.z || 0 };
+        }, true);
+    }
+
     // --- STREAK MANAGEMENT ---
     function checkAndUpdateStreak() {
         const lastActive = localStorage.getItem('last_active_date');
@@ -370,7 +498,7 @@
         const resultDiv = document.getElementById('bmi-result');
 
         if (!weight || !heightCm || !age || heightCm <= 0 || weight <= 0 || age <= 0) {
-            alert("אנא הזן את כל הפרמטרים (גיל, משקל וגובה) בצורה תקינה!");
+            alert("אנא הזן את כל הפרמטרים בצורה תקינה!");
             return;
         }
 
@@ -381,7 +509,6 @@
         let color = "";
         let advice = "";
 
-        // התאמת טווחים לפי גיל בוגר מול נערים/ילדים
         const isYouth = age < 18;
 
         if (bmi < (isYouth ? 17.5 : 18.5)) {
@@ -461,7 +588,7 @@
 
             const now = new Date();
             const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            const lastNotif = localStorage.getItem('last_notif_sent');
+            const lastNotif = localStorage.setItem('last_notif_sent');
 
             if (currentTime === savedTime && lastNotif !== now.toDateString()) {
                 isTestingNotif = false;
@@ -678,11 +805,13 @@
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('meal-screen').classList.add('hidden');
         document.getElementById('workout-screen').classList.add('hidden');
+        document.getElementById('steps-screen').classList.add('hidden');
         document.getElementById('bmi-screen').classList.add('hidden');
         document.getElementById('notif-screen').classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
 
         if(screenId === 'workout-screen') loadWorkout();
+        if(screenId === 'steps-screen') updateStepsUI();
     }
 
     function calculateMeal() {
@@ -848,6 +977,7 @@
     }
 
     // INIT
+    initSteps();
     initLevelSelector();
     checkAndUpdateStreak();
     scheduleNotificationCheck();
