@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile', // <--- המודל היציב והמעודכן כיום
+        model: 'llama3-70b-8192', // המודל היציב והקלאסי של Groq שעובד תמיד
         messages: [
           { role: 'system', content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. אתה עונה תשובות מדויקות, קצרות, מועילות, ותומכות למשתמש.' },
           { role: 'user', content: message }
@@ -38,12 +38,12 @@ export default async function handler(req, res) {
     const data = await response.json();
     
     if (!response.ok) {
-      return res.status(500).json({ reply: 'שגיאה מהשרת של סאם: ' + (data.error?.message || 'Unknown error') });
+      return res.status(500).json({ reply: 'שגיאה מהשרת: ' + (data.error?.message || 'Unknown error') });
     }
 
     const reply = data.choices && data.choices[0] ? data.choices[0].message.content : 'תקלה בקבלת תשובה מסאם.';
     return res.status(200).json({ reply });
   } catch (error) {
-    return res.status(500).json({ reply: 'שגיאה בהתחברות למוח של סאם.' });
+    return res.status(500).json({ reply: 'שגיאה בהתחברות לשרת.' });
   }
 }
