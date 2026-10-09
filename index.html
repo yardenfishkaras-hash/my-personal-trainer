@@ -91,15 +91,6 @@
             100% { opacity: 1; }
         }
 
-        .level-selector-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
         .btn {
             background-color: var(--primary);
             color: white;
@@ -303,17 +294,6 @@
     <div id="workout-screen" class="hidden">
         <h2>אימון יומי 🏋️</h2>
 
-        <div class="level-selector-box">
-            <label for="workout-level-select" style="font-weight: bold; display: block; margin-bottom: 6px;">🎯 דרגת קושי לאימון:</label>
-            <select id="workout-level-select" onchange="changeFitnessLevel(this.value)">
-                <option value="level1" selected>🟢 דרגה 1: האימון המקורי (התחלה)</option>
-                <option value="level2">🌱 דרגה 2: שלב 2 (עומס מוגבר קל)</option>
-                <option value="level3">🟡 דרגה 3: שלב 3 (קצב בינוני-גבוה)</option>
-                <option value="level4">🟠 דרגה 4: שלב 4 (אינטנסיבי)</option>
-                <option value="level5">🔴 דרגה 5: שלב 5 (מתקדם ביותר)</option>
-            </select>
-        </div>
-
         <label for="day-select" style="display:block; text-align:center; margin-bottom:6px;">איזה יום היום?</label>
         <select id="day-select" onchange="loadWorkout()">
             <option value="1">יום ראשון</option>
@@ -479,38 +459,46 @@
 
     function handleFoodImage(input) {
         if (input.files && input.files[0]) {
-            appendChatMsg("📷 צילמתי ארוחה לבדיקה קלורית", 'user');
+            const file = input.files[0];
+            const reader = new FileReader();
 
-            const box = document.getElementById('chat-box');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'chat-msg sam';
-            loadingDiv.id = 'loading-sam';
-            loadingDiv.innerText = 'סאם מנתח את האוכל... 🍎🤖';
-            box.appendChild(loadingDiv);
-            box.scrollTop = box.scrollHeight;
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                
+                appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
 
-            fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    message: "צילמתי עכשיו מנת אוכל. תן לי הערכה קלורית משוערת, טיפ קצר על החלבונים או הפחמימות שבה, ועצה טובה להמשך היום בעברית."
+                const box = document.getElementById('chat-box');
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'chat-msg sam';
+                loadingDiv.id = 'loading-sam';
+                loadingDiv.innerText = 'סאם מנתח את האוכל שלך... 🍎🤖';
+                box.appendChild(loadingDiv);
+                box.scrollTop = box.scrollHeight;
+
+                fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: "נתח את תמונת האוכל הזו, תגיד מה יש בה ותן הערכה קלורית משוערת בקצרה בעברית.",
+                        image: base64Image 
+                    })
                 })
-            })
-            .then(res => res.json())
-            .then(data => {
-                const loader = document.getElementById('loading-sam');
-                if (loader) loader.remove();
-                if (data.reply) {
-                    appendChatMsg(data.reply, 'sam');
-                } else {
-                    appendChatMsg('לא הצלחתי לנתח כרגע, נסה שוב.', 'sam');
-                }
-            })
-            .catch(err => {
-                const loader = document.getElementById('loading-sam');
-                if (loader) loader.remove();
-                appendChatMsg('שגיאה בחיבור לשרת.', 'sam');
-            });
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('loading-sam').remove();
+                    if (data.reply) {
+                        appendChatMsg(data.reply, 'sam');
+                    } else {
+                        appendChatMsg('לא הצלחתי לנתח את התמונה, נסה שוב.', 'sam');
+                    }
+                })
+                .catch(err => {
+                    if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
+                    appendChatMsg('שגיאה בחיבור לשרת לצורך ניתוח התמונה.', 'sam');
+                });
+            };
+
+            reader.readAsDataURL(file);
         }
     }
 
@@ -558,18 +546,6 @@
         checkStreakMilestones(streak);
     }
 
-    let currentLevel = localStorage.getItem('fitness_level') || 'level1';
-
-    function initLevelSelector() {
-        document.getElementById('workout-level-select').value = currentLevel;
-    }
-
-    function changeFitnessLevel(newLevel) {
-        currentLevel = newLevel;
-        localStorage.setItem('fitness_level', newLevel);
-        loadWorkout();
-    }
-
     function calculateBMI() {
         const weight = parseFloat(document.getElementById('bmi-weight').value);
         const heightCm = parseFloat(document.getElementById('bmi-height').value);
@@ -589,14 +565,6 @@
 
     function testStreakRewardNotification() {
         document.getElementById('reminder-alert-box').classList.remove('hidden');
-    }
-
-    function calculateMeal() {
-        const timeInput = document.getElementById('time-input').value;
-        const resultDiv = document.getElementById('meal-result');
-        if (!timeInput) { alert("בחר שעה"); return; }
-        resultDiv.innerHTML = `<b>המלצה לארוחה סביב השעה ${timeInput}:</b><br>• ארוחה עשירה בחלבון ופחמימות מורכבות (כמו חזה עוף עם אורז וירקות או טונה עם ביצה קשה ולחם מלא).`;
-        resultDiv.classList.remove('hidden');
     }
 
     const rawWorkouts = {
@@ -632,14 +600,13 @@
             if (ex.isRestDay) {
                 html += `<div class="exercise-item"><span class="exercise-title">${ex.name}</span></div>`;
             } else {
-                const lvl = ex[currentLevel] || ex.level1;
+                const lvl = ex.level1;
                 html += `<div class="exercise-item"><span>${ex.name} (${lvl.reps})</span></div>`;
             }
         });
         container.innerHTML = html;
     }
 
-    initLevelSelector();
     checkAndUpdateStreak();
     loadChatHistory();
 </script>
