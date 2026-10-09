@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant', // <--- עדכנו כאן למודל החדש והפעיל של גרוק
+        model: 'llama-3.3-70b-versatile', // <--- המודל היציב והמעודכן כיום
         messages: [
           { role: 'system', content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. אתה עונה תשובות מדויקות, קצרות, מועילות, ותומכות למשתמש.' },
           { role: 'user', content: message }
