@@ -72,10 +72,10 @@
         .streak-count { font-size: 22px; color: var(--streak-color); }
 
         .reminder-alert {
-            background: #fee2e2;
-            border: 2px solid #ef4444;
-            color: #991b1b;
-            padding: 12px;
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            padding: 14px;
             border-radius: 12px;
             margin-bottom: 15px;
             text-align: center;
@@ -155,17 +155,6 @@
             line-height: 1.6;
         }
 
-        .reward-row {
-            margin-bottom: 12px;
-        }
-        .reward-label {
-            font-weight: bold;
-            font-size: 14px;
-            color: var(--primary);
-            margin-bottom: 4px;
-            display: block;
-        }
-
         .exercise-item {
             display: flex;
             justify-content: space-between;
@@ -217,10 +206,10 @@
         <span id="streak-display" class="streak-count">0 ימים</span>
     </div>
 
-    <!-- באנר תזכורת חירום -->
-    <div id="reminder-alert-box" class="reminder-alert hidden" onclick="dismissReminder()">
-        <span id="reminder-alert-text">🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥</span>
-        <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ כאן לסגירה)</div>
+    <!-- באנר התראת פרס סטריק שמופיע כשמגיעים ליעד -->
+    <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
+        <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
+        <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ לפתיחת וואטסאפ עם הודעה מוכנה)</div>
     </div>
 
     <!-- מסך ראשי -->
@@ -230,7 +219,6 @@
         <div class="menu-options">
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
-            <button class="btn" onclick="showScreen('rewards-screen')" style="background-color: #f59e0b;">🎁 רשימת פרסים ל-Streak</button>
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
         </div>
@@ -277,48 +265,6 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מסך פרסים ובוואטסאפ -->
-    <div id="rewards-screen" class="hidden">
-        <h2>🎁 רשימת פרסים ל-Streak</h2>
-        <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 12px;">
-            הגדר את הפרסים שאתה רוצה לכל תקופה ושלח לאמא בוואטסאפ:
-        </p>
-
-        <div class="card">
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של שבוע:</span>
-                <input type="text" id="rew-1" placeholder="למשל: גלידה מפנקת" oninput="saveRewards()">
-            </div>
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של שבועיים:</span>
-                <input type="text" id="rew-2" placeholder="למשל: ארוחה במסעדה אהובה" oninput="saveRewards()">
-            </div>
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של חודש:</span>
-                <input type="text" id="rew-3" placeholder="למשל: משחק חדש / פריט לבוש" oninput="saveRewards()">
-            </div>
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של שלושה חודשים:</span>
-                <input type="text" id="rew-4" placeholder="למשל: יציאה מיוחדת" oninput="saveRewards()">
-            </div>
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של חצי שנה:</span>
-                <input type="text" id="rew-5" placeholder="למשל: מתנה שווה במיוחד" oninput="saveRewards()">
-            </div>
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של תשעה חודשים:</span>
-                <input type="text" id="rew-6" placeholder="למשל: שדרוג ציוד או בילוי ענק" oninput="saveRewards()">
-            </div>
-            <div class="reward-row">
-                <span class="reward-label">🔥 רצף של שנה שלמה:</span>
-                <input type="text" id="rew-7" placeholder="למשל: חופשה / מתנה גדולה" oninput="saveRewards()">
-            </div>
-        </div>
-
-        <button class="btn btn-whatsapp" onclick="sendWhatsAppToMom()">שלח לאמא בוואטסאפ 💚</button>
-        <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
-    </div>
-
     <!-- מסך מחשבון BMI -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
@@ -354,7 +300,7 @@
         <p style="text-align: center; color: var(--subtext);">בחר באיזו שעה תרצה לקבל תזכורת להתאמן ולשמור על ה-Streak:</p>
         <input type="time" id="notif-time" value="16:00">
         <button class="btn" onclick="setDailyReminder()">שמור התראה</button>
-        <button class="btn btn-accent" onclick="testNotification()">בדוק התראה עכשיו 🔔</button>
+        <button class="btn btn-accent" onclick="testStreakRewardNotification()">בדוק התראת פרס סטריק עכשיו 🎁</button>
         <div id="notif-status" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
@@ -372,44 +318,47 @@
 </div>
 
 <script>
-    // --- REWARDS MANAGEMENT ---
-    function saveRewards() {
-        for (let i = 1; i <= 7; i++) {
-            const val = document.getElementById(`rew-${i}`).value;
-            localStorage.setItem(`reward_${i}`, val);
-        }
-    }
+    // --- STREAK REWARD WHATSAPP INTEGRATION ---
+    let currentStreakDaysForReward = 7; // משתנה שישמור את סוג הסטרייק שהושג
 
-    function loadRewards() {
-        for (let i = 1; i <= 7; i++) {
-            const saved = localStorage.getItem(`reward_${i}`);
-            if (saved) {
-                document.getElementById(`rew-${i}`).value = saved;
-            }
-        }
-    }
+    function sendRewardToMom() {
+        let periodName = "שבוע";
+        if (currentStreakDaysForReward === 14) periodName = "שבועיים";
+        else if (currentStreakDaysForReward === 30) periodName = "חודש";
+        else if (currentStreakDaysForReward === 90) periodName = "שלושה חודשים";
+        else if (currentStreakDaysForReward === 180) periodName = "חצי שנה";
+        else if (currentStreakDaysForReward === 270) periodName = "תשעה חודשים";
+        else if (currentStreakDaysForReward === 365) periodName = "שנה שלמה";
 
-    function sendWhatsAppToMom() {
-        saveRewards();
-        const r1 = document.getElementById('rew-1').value || 'לא הוגדר';
-        const r2 = document.getElementById('rew-2').value || 'לא הוגדר';
-        const r3 = document.getElementById('rew-3').value || 'לא הוגדר';
-        const r4 = document.getElementById('rew-4').value || 'לא הוגדר';
-        const r5 = document.getElementById('rew-5').value || 'לא הוגדר';
-        const r6 = document.getElementById('rew-6').value || 'לא הוגדר';
-        const r7 = document.getElementById('rew-7').value || 'לא הוגדר';
-
-        const message = `היי אמא! הגעתי ליעד רצף של שבוע באפליקציית הכושר "מאמן אישי" והנה רשימת פרסים שהייתי רוצה ואת יכולה לבחור אחד:\n\n` +
-            `🔥 שבוע: ${r1}\n` +
-            `🔥 שבועיים: ${r2}\n` +
-            `🔥 חודש: ${r3}\n` +
-            `🔥 3 חודשים: ${r4}\n` +
-            `🔥 חצי שנה: ${r5}\n` +
-            `🔥 9 חודשים: ${r6}\n` +
-            `🔥 שנה שלמה: ${r7}`;
-
+        const message = `היי אמא! הגעתי ליעד רצף של ${periodName} באפליקציית הכושר "מאמן אישי" והנה רשימת פרסים שהייתי רוצה ואת יכולה לבחור אחד:\n\n1. `;
         const encoded = encodeURIComponent(message);
         window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+        
+        // סגירת הבאנר לאחר שליחה
+        document.getElementById('reminder-alert-box').classList.add('hidden');
+    }
+
+    function checkStreakMilestones(streak) {
+        // בדיקה האם הגענו לאחד מהסטרייקים המבוקשים: 7, 14, 30, 90, 180, 270, 365
+        const milestones = [7, 14, 30, 90, 180, 270, 365];
+        if (milestones.includes(streak)) {
+            currentStreakDaysForReward = streak;
+            let periodName = streak === 7 ? "שבוע" : streak === 14 ? "שבועיים" : streak === 30 ? "חודש" : streak === 90 ? "שלושה חודשים" : streak === 180 ? "חצי שנה" : streak === 270 ? "תשעה חודשים" : "שנה שלמה";
+            
+            document.getElementById('reminder-alert-text').innerText = `🎉 כל הכבוד! הגעת לרצף של ${periodName} באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚`;
+            document.getElementById('reminder-alert-box').classList.remove('hidden');
+        }
+    }
+
+    function testStreakRewardNotification() {
+        playBeep(880, 0.6);
+        currentStreakDaysForReward = 7;
+        document.getElementById('reminder-alert-text').innerText = "🎉 כל הכבוד! הגעת לרצף של שבוע באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚";
+        document.getElementById('reminder-alert-box').classList.remove('hidden');
+
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("המאמן האישי 🏋️‍♂️", { body: "הגעת לרצף שבועי! לחץ לשליחת בקשת פרס לאמא." });
+        }
     }
 
     // --- STREAK MANAGEMENT ---
@@ -428,6 +377,7 @@
             }
         }
         document.getElementById('streak-display').innerText = `${streak} ימים`;
+        checkStreakMilestones(streak);
     }
 
     function incrementStreak() {
@@ -440,6 +390,7 @@
             localStorage.setItem('last_active_date', todayStr);
             document.getElementById('streak-display').innerText = `${streak} ימים`;
             alert(`🔥 כל הכבוד! הגדלת את ה-Streak שלך ל-${streak} ימים!`);
+            checkStreakMilestones(streak);
         }
     }
 
@@ -512,10 +463,6 @@
 
     function dismissReminder() {
         document.getElementById('reminder-alert-box').classList.add('hidden');
-        if (!isTestingNotif) {
-            localStorage.setItem('last_notif_sent', new Date().toDateString());
-        }
-        isTestingNotif = false;
     }
 
     function setDailyReminder() {
@@ -533,43 +480,6 @@
         } else {
             document.getElementById('notif-status').innerText = `✓ תזכורת הוגדרה לשעה ${time}`;
         }
-    }
-
-    function testNotification() {
-        playBeep(880, 0.6);
-        isTestingNotif = true;
-        
-        document.getElementById('reminder-alert-text').innerText = "🧪 בדיקת התראה: המערכת עובדת מצוין!";
-        document.getElementById('reminder-alert-box').classList.remove('hidden');
-
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("המאמן האישי 🏋️‍♂️", { body: "בדיקת התראה עובדת מצוין!" });
-        }
-    }
-
-    function scheduleNotificationCheck() {
-        setInterval(() => {
-            const savedTime = localStorage.getItem('reminder_time');
-            if (!savedTime) return;
-
-            const now = new Date();
-            const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            const lastNotif = localStorage.getItem('last_notif_sent');
-
-            if (currentTime === savedTime && lastNotif !== now.toDateString()) {
-                isTestingNotif = false;
-                playBeep(880, 0.8);
-                document.getElementById('reminder-alert-text').innerText = "🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥";
-                document.getElementById('reminder-alert-box').classList.remove('hidden');
-                localStorage.setItem('last_notif_sent', now.toDateString());
-
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("המאמן האישי 🏋️‍♂️", {
-                        body: "זמן להתאמן! היכנס כדי לשמור על ה-Streak שלך 🔥"
-                    });
-                }
-            }
-        }, 15000);
     }
 
     // --- MEAL DATA ---
@@ -771,13 +681,11 @@
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('meal-screen').classList.add('hidden');
         document.getElementById('workout-screen').classList.add('hidden');
-        document.getElementById('rewards-screen').classList.add('hidden');
         document.getElementById('bmi-screen').classList.add('hidden');
         document.getElementById('notif-screen').classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
 
         if(screenId === 'workout-screen') loadWorkout();
-        if(screenId === 'rewards-screen') loadRewards();
     }
 
     function calculateMeal() {
@@ -942,10 +850,8 @@
     }
 
     // INIT
-    loadRewards();
     initLevelSelector();
     checkAndUpdateStreak();
-    scheduleNotificationCheck();
 </script>
 </body>
 </html>
