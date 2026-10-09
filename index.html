@@ -81,6 +81,7 @@
             text-align: center;
             font-weight: bold;
             animation: pulse 1.5s infinite;
+            cursor: pointer;
         }
 
         @keyframes pulse {
@@ -204,9 +205,10 @@
         <span id="streak-display" class="streak-count">0 ימים</span>
     </div>
 
-    <!-- באנר תזכורת חירום -->
-    <div id="reminder-alert-box" class="reminder-alert hidden">
+    <!-- באנר תזכורת חירום לחיץ לסגירה -->
+    <div id="reminder-alert-box" class="reminder-alert hidden" onclick="dismissReminder()">
         🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥
+        <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ כאן לסגירה)</div>
     </div>
 
     <!-- מסך ראשי -->
@@ -330,6 +332,10 @@
     }
 
     // --- REMINDERS & NOTIFICATIONS ---
+    function dismissReminder() {
+        document.getElementById('reminder-alert-box').classList.add('hidden');
+    }
+
     function setDailyReminder() {
         const time = document.getElementById('notif-time').value;
         localStorage.setItem('reminder_time', time);
@@ -634,6 +640,7 @@
     let restSec = 60;
 
     function startWorkoutRoutine(day, exIndex) {
+        dismissReminder(); // סוגר את ההתראה ברגע שמתחילים אימון
         const rawEx = rawWorkouts[day].exercises[exIndex];
         const lvlData = rawEx[currentLevel];
 
@@ -730,6 +737,7 @@
         document.getElementById('timer-modal').classList.add('hidden');
     }
 
+    // פונקציית צליל מקורית ופשוטה
     function playBeep(freq = 600, duration = 0.5) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -751,4 +759,4 @@
     scheduleNotificationCheck();
 </script>
 </body>
-</html>י
+</html>
