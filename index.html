@@ -1,614 +1,1283 @@
 <!DOCTYPE html>
+
 <html lang="he" dir="rtl">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
     <title>המאמן האישי</title>
+
     
+
     <!-- הגדרות להתאמה מלאה לאייפון (iOS PWA) -->
+
     <meta name="apple-mobile-web-app-capable" content="yes">
+
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
+
     
+
     <!-- אייקון האפליקציה למסך הבית באייפון -->
+
     <link rel="apple-touch-icon" href="icon.png?v=2">
+
     
+
     <style>
+
         :root {
+
             --bg-color: #f4f6f8;
+
             --card-bg: #ffffff;
+
             --primary: #2563eb;
+
             --primary-hover: #1d4ed8;
+
             --accent: #10b981;
+
             --streak-color: #f59e0b;
+
             --text-color: #1f2937;
+
             --subtext: #4b5563;
+
             --work-color: #ef4444;
+
             --rest-color: #10b981;
+
             --sam-color: #7c3aed;
+
         }
+
+
 
         * {
+
             box-sizing: border-box !important;
+
         }
+
+
 
         body {
+
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
             background-color: var(--bg-color);
+
             color: var(--text-color);
+
             margin: 0;
+
             padding: 16px;
+
             display: flex;
+
             justify-content: center;
+
             -webkit-user-select: none;
+
         }
 
+
+
         .app-container {
+
             width: 100%;
+
             max-width: 480px;
+
             background: var(--card-bg);
+
             border-radius: 20px;
+
             padding: 20px;
+
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+
             min-height: 85vh;
+
             display: flex;
+
             flex-direction: column;
+
         }
+
+
 
         h1, h2, h3 { text-align: center; margin-top: 0; }
 
+
+
         .streak-banner {
+
             background: #fffbe3;
+
             border: 2px solid var(--streak-color);
+
             border-radius: 14px;
+
             padding: 10px 15px;
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
+
             margin-bottom: 15px;
+
             font-weight: bold;
+
             color: #b45309;
+
         }
+
+
 
         .streak-count { font-size: 22px; color: var(--streak-color); }
 
+
+
         .reminder-alert {
+
             background: #d1fae5;
+
             border: 2px solid #10b981;
+
             color: #065f46;
+
             padding: 14px;
+
             border-radius: 12px;
+
             margin-bottom: 15px;
+
             text-align: center;
+
             font-weight: bold;
+
             animation: pulse 1.5s infinite;
+
             cursor: pointer;
+
         }
+
+
 
         @keyframes pulse {
+
             0% { opacity: 1; }
+
             50% { opacity: 0.7; }
+
             100% { opacity: 1; }
+
         }
+
+
+
+        .level-selector-box {
+
+            background: #f0fdf4;
+
+            border: 1px solid #bbf7d0;
+
+            border-radius: 12px;
+
+            padding: 12px;
+
+            margin-bottom: 15px;
+
+            text-align: center;
+
+        }
+
+
 
         .btn {
+
             background-color: var(--primary);
+
             color: white;
+
             border: none;
+
             padding: 14px 20px;
+
             border-radius: 12px;
+
             font-size: 16px;
+
             font-weight: bold;
+
             cursor: pointer;
+
             width: 100%;
+
             margin-bottom: 12px;
+
             transition: background 0.2s;
+
             display: block;
+
             text-align: center;
+
             text-decoration: none;
+
         }
+
+
 
         .btn:hover { background-color: var(--primary-hover); }
+
         .btn-secondary { background-color: #6b7280; }
+
         .btn-accent { background-color: var(--accent); width: 100%; padding: 14px 20px; font-size: 16px; }
+
         .btn-sam { background-color: var(--sam-color); }
+
         .btn-sam:hover { background-color: #6d28d9; }
+
         .hidden { display: none !important; }
 
+
+
         .menu-options {
+
             display: flex;
+
             flex-direction: column;
+
             gap: 10px;
+
             margin-top: 15px;
+
         }
+
+
 
         input[type="time"], input[type="number"], input[type="text"], select {
+
             width: 100% !important;
+
             max-width: 100% !important;
+
             padding: 12px;
+
             border: 2px solid #e5e7eb;
+
             border-radius: 10px;
+
             font-size: 16px;
+
             margin: 0 0 12px 0;
+
             text-align: center;
+
             display: block;
+
             background-color: #f9fafb;
+
             color: var(--text-color);
+
             -webkit-appearance: none;
+
             appearance: none;
+
             direction: rtl;
+
         }
+
+
 
         .card {
+
             background: #f9fafb;
+
             border: 1px solid #e5e7eb;
+
             border-radius: 12px;
+
             padding: 15px;
+
             margin-bottom: 12px;
+
             line-height: 1.6;
+
         }
+
+
 
         .chat-container {
+
             display: flex;
+
             flex-direction: column;
+
             height: 48vh;
+
             background: #fff;
+
             border: 1px solid #e5e7eb;
+
             border-radius: 12px;
+
             padding: 10px;
+
             overflow-y: auto;
+
             margin-bottom: 12px;
+
             gap: 10px;
+
         }
+
+
 
         .chat-msg {
+
             padding: 10px 14px;
+
             border-radius: 12px;
+
             max-width: 85%;
+
             font-size: 14px;
+
             line-height: 1.4;
+
         }
+
+
 
         .chat-msg.user {
+
             background: #e0f2fe;
+
             color: #0369a1;
+
             align-self: flex-start;
+
             text-align: right;
+
         }
+
+
 
         .chat-msg.sam {
+
             background: #f3e8ff;
+
             color: #6b21a8;
+
             align-self: flex-end;
+
             text-align: right;
+
         }
+
+
 
         .chat-input-box {
+
             display: flex;
+
             gap: 8px;
+
         }
+
+
 
         .exercise-item {
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             padding: 12px;
+
             background: #f3f4f6;
+
             border-radius: 10px;
+
             margin-bottom: 10px;
+
         }
+
+
 
         .exercise-info { max-width: 70%; }
+
         .exercise-title { font-weight: bold; display: block; }
+
         .exercise-sub { font-size: 13px; color: var(--subtext); }
 
+
+
         .timer-modal {
+
             position: fixed;
+
             top: 0;
+
             left: 0;
+
             width: 100%;
+
             height: 100%;
+
             background: rgba(0,0,0,0.7);
+
             display: flex;
+
             justify-content: center;
+
             align-items: center;
+
             z-index: 100;
+
         }
+
+
 
         .timer-content {
+
             background: white;
+
             padding: 25px;
+
             border-radius: 20px;
+
             text-align: center;
+
             width: 85%;
+
             max-width: 340px;
+
         }
 
+
+
         .timer-display { font-size: 56px; font-weight: bold; margin: 15px 0; }
+
         .timer-display.work { color: var(--work-color); }
+
         .timer-display.rest { color: var(--rest-color); }
+
         .set-counter { font-size: 18px; font-weight: bold; color: var(--subtext); margin-bottom: 5px; }
+
     </style>
+
 </head>
+
 <body>
 
+
+
 <div class="app-container">
+
     <div class="streak-banner">
+
         <span>🔥 רצף יומיומי (Streak):</span>
+
         <span id="streak-display" class="streak-count">0 ימים</span>
+
     </div>
+
+
 
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
+
         <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
+
         <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ לפתיחת וואטסאפ עם הודעה מוכנה)</div>
+
     </div>
+
+
 
     <div id="home-screen">
+
         <h1>המאמן האישי שלי 🏋️‍♂️</h1>
+
         <p style="text-align: center; color: var(--subtext);">בחר מה ברצונך לבדוק עכשיו:</p>
+
         <div class="menu-options">
+
             <button class="btn btn-sam" onclick="showScreen('sam-screen')">🤖 סאם (SAM) - העוזר החכם שלך</button>
+
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
+
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
+
             <button class="btn" onclick="showScreen('calories-screen')" style="background-color: #059669;">🔥 מחשבון קלוריות</button>
+
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
+
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
+
         </div>
+
     </div>
 
+
+
     <div id="sam-screen" class="hidden">
+
         <h2>סאם (SAM) 🤖</h2>
+
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
+
             המוח החכם שלך: מחובר ל-AI אמיתי וזוכר את כל השיחות שלך!
+
         </p>
+
+
 
         <div id="chat-box" class="chat-container"></div>
 
+
+
         <div class="chat-input-box">
+
             <input type="text" id="chat-input" placeholder="שאל את סאם או בקש שינוי..." style="margin:0;">
+
             <button class="btn btn-sam" style="width: auto; margin:0; padding: 0 16px;" onclick="sendToSam()">שלח</button>
+
         </div>
+
+
 
         <div style="margin-top: 10px; display: flex; gap: 8px;">
+
             <label class="btn" style="background-color: #0284c7; font-size: 13px; padding: 10px; margin: 0; cursor: pointer; flex: 1; text-align: center;">
+
                 📷 צלם אוכל
+
                 <input type="file" accept="image/*" style="display: none;" onchange="handleFoodImage(this)">
+
             </label>
+
             <button class="btn btn-secondary" style="margin: 0; padding: 10px; font-size: 13px; flex: 1;" onclick="showScreen('home-screen')">חזרה לתפריט</button>
+
         </div>
+
         <div style="text-align: center; margin-top: 8px;">
+
             <button onclick="clearChatHistory()" style="background: none; border: none; color: #ef4444; font-size: 12px; cursor: pointer; text-decoration: underline;">מחק היסטוריית שיחות</button>
+
         </div>
+
     </div>
+
+
 
     <div id="meal-screen" class="hidden">
+
         <h2>תפריט תזונה 🥗</h2>
+
         <label for="time-input" style="display:block; text-align:center; margin-bottom:8px;">מה השעה עכשיו? (פורמט 24 שעות):</label>
+
         <input type="time" id="time-input" value="14:00">
+
         <button class="btn" onclick="calculateMeal()">הצג אופציות לארוחה זו</button>
 
+
+
         <div id="meal-result" class="card hidden"></div>
+
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
     </div>
+
+
 
     <div id="workout-screen" class="hidden">
+
         <h2>אימון יומי 🏋️</h2>
 
+
+
+        <div class="level-selector-box">
+
+            <label for="workout-level-select" style="font-weight: bold; display: block; margin-bottom: 6px;">🎯 דרגת קושי לאימון:</label>
+
+            <select id="workout-level-select" onchange="changeFitnessLevel(this.value)">
+
+                <option value="level1" selected>🟢 דרגה 1: האימון המקורי (התחלה)</option>
+
+                <option value="level2">🌱 דרגה 2: שלב 2 (עומס מוגבר קל)</option>
+
+                <option value="level3">🟡 דרגה 3: שלב 3 (קצב בינוני-גבוה)</option>
+
+                <option value="level4">🟠 דרגה 4: שלב 4 (אינטנסיבי)</option>
+
+                <option value="level5">🔴 דרגה 5: שלב 5 (מתקדם ביותר)</option>
+
+            </select>
+
+        </div>
+
+
+
         <label for="day-select" style="display:block; text-align:center; margin-bottom:6px;">איזה יום היום?</label>
+
         <select id="day-select" onchange="loadWorkout()">
+
             <option value="1">יום ראשון</option>
+
             <option value="2">יום שני</option>
+
             <option value="3">יום שלישי</option>
+
             <option value="4">יום רביעי</option>
+
             <option value="5">יום חמישי</option>
+
             <option value="6">יום שישי</option>
+
             <option value="7">יום שבת</option>
+
         </select>
+
+
 
         <div id="workout-list"></div>
+
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
     </div>
 
+
+
     <div id="calories-screen" class="hidden">
+
         <h2>מחשבון קלוריות 🔥</h2>
+
         <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
+
             חשב את הוצאת הקלוריות היומית שלך (TDEE) ואת היעדים שלך:
+
         </p>
 
+
+
         <label for="cal-gender" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">מגדר:</label>
+
         <select id="cal-gender">
+
             <option value="male" selected>בן 👦</option>
+
             <option value="female">בת 👧</option>
+
         </select>
+
+
 
         <label for="cal-age" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גיל:</label>
+
         <input type="number" id="cal-age" placeholder="למשל: 14" min="5" max="120">
+
         
+
         <label for="cal-weight" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
+
         <input type="number" id="cal-weight" placeholder="למשל: 55" step="0.1">
 
+
+
         <label for="cal-height" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
+
         <input type="number" id="cal-height" placeholder="למשל: 165">
 
+
+
         <label for="cal-activity" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">רמת פעילות גופנית:</label>
+
         <select id="cal-activity">
+
             <option value="1.2">יושבני (במעט או ללא פעילות מיוחדת)</option>
+
             <option value="1.375">קל (אימון/הליכה 1-3 פעמים בשבוע)</option>
+
             <option value="1.55" selected>בינוני (אימון 3-5 פעמים בשבוע - כמו האפליקציה!)</option>
+
             <option value="1.725">פעיל מאוד (אימון קשה 6-7 פעמים בשבוע)</option>
+
         </select>
+
+
 
         <button class="btn" style="background-color: #059669; margin-top: 10px;" onclick="calculateCalories()">חשב קלוריות</button>
 
+
+
         <div id="calories-result" class="card hidden" style="text-align: right;"></div>
 
+
+
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
     </div>
 
+
+
     <div id="bmi-screen" class="hidden">
+
         <h2>מחשבון BMI ⚖️</h2>
+
         <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
+
             הכנס את הפרמטרים שלך לקבלת מדד מותאם אישית:
+
         </p>
 
+
+
         <label for="bmi-gender" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">מגדר:</label>
+
         <select id="bmi-gender">
+
             <option value="male" selected>בן 👦</option>
+
             <option value="female">בת 👧</option>
+
         </select>
 
+
+
         <label for="bmi-age" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גיל:</label>
+
         <input type="number" id="bmi-age" placeholder="למשל: 14" min="5" max="120">
+
         
+
         <label for="bmi-weight" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
+
         <input type="number" id="bmi-weight" placeholder="למשל: 55" step="0.1">
 
+
+
         <label for="bmi-height" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
+
         <input type="number" id="bmi-height" placeholder="למשל: 165">
+
+
 
         <button class="btn" style="background-color: #8b5cf6;" onclick="calculateBMI()">חשב BMI</button>
 
+
+
         <div id="bmi-result" class="card hidden" style="text-align: center;"></div>
 
+
+
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
     </div>
+
+
 
     <div id="notif-screen" class="hidden">
+
         <h2>התראה יומית 🔔</h2>
+
         <p style="text-align: center; color: var(--subtext);">בחר באיזו שעה תרצה לקבל תזכורת להתאמן ולשמור על ה-Streak:</p>
+
         <input type="time" id="notif-time" value="16:00">
+
         <button class="btn" onclick="setDailyReminder()">שמור התראה</button>
+
         <button class="btn btn-accent" onclick="testStreakRewardNotification()">בדוק התראת פרס סטריק עכשיו 🎁</button>
+
         <div id="notif-status" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
+
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
     </div>
+
 </div>
 
+
+
 <script>
+
     function loadChatHistory() {
+
         const box = document.getElementById('chat-box');
+
         const savedHistory = localStorage.getItem('sam_chat_history');
+
         if (savedHistory) {
+
             box.innerHTML = savedHistory;
+
         } else {
+
             box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני מחובר למוח אמיתי ויכול לעזור לך בכל מה שתצטרך!</div>`;
+
         }
+
         box.scrollTop = box.scrollHeight;
+
     }
+
+
 
     function saveChatHistory() {
+
         const box = document.getElementById('chat-box');
+
         localStorage.setItem('sam_chat_history', box.innerHTML);
+
     }
+
+
 
     function clearChatHistory() {
+
         if (confirm("האם אתה בטוח שתרצה למחוק את כל היסטוריית השיחות עם סאם?")) {
+
             localStorage.removeItem('sam_chat_history');
+
             loadChatHistory();
+
         }
+
     }
+
+
 
     async function sendToSam() {
+
         const inputField = document.getElementById('chat-input');
+
         const text = inputField.value.trim();
+
         if (!text) return;
 
+
+
         appendChatMsg(text, 'user');
+
         inputField.value = '';
 
+
+
         const box = document.getElementById('chat-box');
+
         const loadingDiv = document.createElement('div');
+
         loadingDiv.className = 'chat-msg sam';
+
         loadingDiv.id = 'loading-sam';
+
         loadingDiv.innerText = 'סאם חושב... 🤖';
+
         box.appendChild(loadingDiv);
+
         box.scrollTop = box.scrollHeight;
+
+
 
         try {
+
             const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
+
                 method: 'POST',
+
                 headers: {
+
                     'Content-Type': 'application/json'
+
                 },
+
                 body: JSON.stringify({ message: text })
+
             });
 
+
+
             const data = await response.json();
+
             document.getElementById('loading-sam').remove();
 
+
+
             if (data.reply) {
+
                 appendChatMsg(data.reply, 'sam');
+
             } else {
+
                 appendChatMsg('תקבל תשובה בקרוב. נסה שוב.', 'sam');
+
             }
+
         } catch (error) {
+
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
+
             appendChatMsg('שגיאה בחיבור לשרת של סאם.', 'sam');
+
         }
+
     }
+
+
 
     function appendChatMsg(text, sender) {
+
         const box = document.getElementById('chat-box');
+
         const div = document.createElement('div');
+
         div.className = `chat-msg ${sender}`;
+
         div.innerText = text;
+
         box.appendChild(div);
+
         box.scrollTop = box.scrollHeight;
+
         saveChatHistory();
+
     }
+
+
 
     function handleFoodImage(input) {
+
         if (input.files && input.files[0]) {
+
             const file = input.files[0];
+
             const reader = new FileReader();
 
+
+
             reader.onload = function(e) {
+
                 const base64Image = e.target.result;
+
                 
+
                 appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
 
+
+
                 const box = document.getElementById('chat-box');
+
                 const loadingDiv = document.createElement('div');
+
                 loadingDiv.className = 'chat-msg sam';
+
                 loadingDiv.id = 'loading-sam';
+
                 loadingDiv.innerText = 'סאם מנתח את האוכל שלך... 🍎🤖';
+
                 box.appendChild(loadingDiv);
+
                 box.scrollTop = box.scrollHeight;
 
+
+
                 fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
+
                     method: 'POST',
+
                     headers: { 'Content-Type': 'application/json' },
+
                     body: JSON.stringify({ 
+
                         message: "נתח את תמונת האוכל הזו, תגיד מה יש בה ותן הערכה קלורית משוערת בקצרה בעברית.",
+
                         image: base64Image 
+
                     })
+
                 })
+
                 .then(res => res.json())
+
                 .then(data => {
+
                     document.getElementById('loading-sam').remove();
+
                     if (data.reply) {
+
                         appendChatMsg(data.reply, 'sam');
+
                     } else {
+
                         appendChatMsg('לא הצלחתי לנתח את התמונה, נסה שוב.', 'sam');
+
                     }
+
                 })
+
                 .catch(err => {
-                    if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
+
+                    if(document.getElementById('loading-sam')) document.getElementById('loading-sam'.remove());
+
                     appendChatMsg('שגיאה בחיבור לשרת לצורך ניתוח התמונה.', 'sam');
+
                 });
+
             };
 
+
+
             reader.readAsDataURL(file);
+
         }
+
     }
+
+
 
     function calculateCalories() {
+
         const gender = document.getElementById('cal-gender').value;
+
         const age = parseInt(document.getElementById('cal-age').value, 10);
+
         const weight = parseFloat(document.getElementById('cal-weight').value);
+
         const height = parseFloat(document.getElementById('cal-height').value);
+
         const activity = parseFloat(document.getElementById('cal-activity').value);
+
         const resultDiv = document.getElementById('calories-result');
 
+
+
         if (!weight || !height || !age || height <= 0 || weight <= 0 || age <= 0) {
+
             alert("אנא הזן את כל הנתונים בצורה תקינה!");
+
             return;
+
         }
 
+
+
         let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+
         if (gender === 'male') bmr += 5; else bmr -= 161;
 
+
+
         const tdee = Math.round(bmr * activity);
+
         resultDiv.innerHTML = `
+
             <div style="font-size: 14px; font-weight: bold; color: #059669; margin-bottom: 8px; text-align: center;">תוצאות חישוב הקלוריות שלך:</div>
+
             • <b>הוצאה יומית כוללת (TDEE):</b> כ-<b>${tdee}</b> קלוריות ביום.<br>
+
         `;
+
         resultDiv.classList.remove('hidden');
+
     }
+
+
 
     let currentStreakDaysForReward = 1;
 
+
+
     function sendRewardToMom() {
+
         const message = `היי אמא! הגעתי ליעד רצף באפליקציית הכושר ומגיע לי פרס!`;
+
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+
         document.getElementById('reminder-alert-box').classList.add('hidden');
+
     }
+
+
 
     function checkStreakMilestones(streak) {
+
         if ([1, 7, 14, 30, 90, 180, 270, 365].includes(streak)) {
+
             document.getElementById('reminder-alert-box').classList.remove('hidden');
+
         }
+
     }
+
+
 
     function checkAndUpdateStreak() {
+
         let streak = parseInt(localStorage.getItem('user_streak') || '0', 10);
+
         document.getElementById('streak-display').innerText = `${streak} ימים`;
+
         checkStreakMilestones(streak);
+
     }
+
+
+
+    let currentLevel = localStorage.getItem('fitness_level') || 'level1';
+
+
+
+    function initLevelSelector() {
+
+        document.getElementById('workout-level-select').value = currentLevel;
+
+    }
+
+
+
+    function changeFitnessLevel(newLevel) {
+
+        currentLevel = newLevel;
+
+        localStorage.setItem('fitness_level', newLevel);
+
+        loadWorkout();
+
+    }
+
+
 
     function calculateBMI() {
+
         const weight = parseFloat(document.getElementById('bmi-weight').value);
+
         const heightCm = parseFloat(document.getElementById('bmi-height').value);
+
         const age = parseInt(document.getElementById('bmi-age').value, 10);
+
         const resultDiv = document.getElementById('bmi-result');
+
         if (!weight || !heightCm || !age) { alert("הזן נתונים תקינים"); return; }
+
         const bmi = (weight / Math.pow(heightCm / 100, 2)).toFixed(1);
+
         resultDiv.innerHTML = `<div style="font-size: 32px; font-weight: bold; color: #10b981;">${bmi}</div>`;
+
         resultDiv.classList.remove('hidden');
+
     }
+
+
 
     function setDailyReminder() {
+
         const time = document.getElementById('notif-time').value;
+
         localStorage.setItem('reminder_time', time);
+
         document.getElementById('notif-status').innerText = `✓ התראה הוגדרה לשעה ${time}`;
+
     }
 
-    function testStreakRewardNotification() {
-        document.getElementById('reminder-alert-box').classList.remove('hidden');
-    }
+
 
     const rawWorkouts = {
+
         1: { title: "כוח + הליכון קצר", exercises: [{ name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "10 חזרות" } }] },
+
         2: { title: "יום מנוחה", exercises: [{ name: "מנוחה", isRestDay: true }] },
+
         3: { title: "אימון כוח", exercises: [{ name: "סקוואטים", level1: { sets: 3, work: 40, rest: 60, reps: "12 חזרות" } }] },
+
         4: { title: "אירובי", exercises: [{ name: "הליכון", level1: { sets: 1, work: 1200, rest: 0, reps: "20 דקות" } }] },
+
         5: { title: "כוח", exercises: [{ name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "10 חזרות" } }] },
+
         6: { title: "הליכון", exercises: [{ name: "הליכון", level1: { sets: 1, work: 1500, rest: 0, reps: "25 דקות" } }] },
+
         7: { title: "מנוחה", exercises: [{ name: "מנוחה", isRestDay: true }] }
+
     };
 
+
+
     function showScreen(screenId) {
+
         const screens = ['home-screen', 'sam-screen', 'meal-screen', 'workout-screen', 'calories-screen', 'bmi-screen', 'notif-screen'];
+
         screens.forEach(id => {
+
             const el = document.getElementById(id);
+
             if (el) el.classList.add('hidden');
+
         });
+
+
 
         const target = document.getElementById(screenId);
+
         if (target) target.classList.remove('hidden');
 
+
+
         if(screenId === 'workout-screen') loadWorkout();
+
         if(screenId === 'sam-screen') loadChatHistory();
+
     }
+
+
 
     function loadWorkout() {
+
         const day = document.getElementById('day-select').value;
+
         const data = rawWorkouts[day];
+
         const container = document.getElementById('workout-list');
+
         let html = `<h3 style="margin-top:15px;">${data.title}</h3>`;
+
         data.exercises.forEach((ex, idx) => {
+
             if (ex.isRestDay) {
+
                 html += `<div class="exercise-item"><span class="exercise-title">${ex.name}</span></div>`;
+
             } else {
-                const lvl = ex.level1;
+
+                const lvl = ex[currentLevel] || ex.level1;
+
                 html += `<div class="exercise-item"><span>${ex.name} (${lvl.reps})</span></div>`;
+
             }
+
         });
+
         container.innerHTML = html;
+
     }
 
+
+
+    initLevelSelector();
+
     checkAndUpdateStreak();
-    loadChatHistory();
+
 </script>
+
 </body>
-</html>
+
+</html> 
