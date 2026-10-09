@@ -584,15 +584,14 @@
     };
 
     function showScreen(screenId) {
-        document.getElementById('home-screen').classList.add('hidden');
-        document.getElementById('sam-screen').classList.add('hidden');
-        document.getElementById('meal-screen').classList.add('hidden');
-        document.getElementById('workout-screen').classList.add('hidden');
-        document.getElementById('calories-screen').classList.add('hidden');
-        document.getElementById('bmi-screen').classList.add('hidden');
-        document.getElementById('notif-screen').classList.add('hidden');
+        const screens = ['home-screen', 'sam-screen', 'meal-screen', 'workout-screen', 'calories-screen', 'bmi-screen', 'notif-screen'];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
 
-        document.getElementById(screenId).classList.remove('hidden');
+        const target = document.getElementById(screenId);
+        if (target) target.classList.remove('hidden');
 
         if(screenId === 'workout-screen') loadWorkout();
         if(screenId === 'sam-screen') loadChatHistory();
