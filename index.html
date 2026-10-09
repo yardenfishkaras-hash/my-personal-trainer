@@ -10,8 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
-    <!-- אייקון משקולת למסך הבית -->
-    <link rel="apple-touch-icon" href="icon.png?v=2">    
+    <!-- אייקון האפליקציה למסך הבית באייפון -->
+    <link rel="apple-touch-icon" href="icon.png?v=2">
+    
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -24,6 +25,10 @@
             --subtext: #4b5563;
             --work-color: #ef4444;
             --rest-color: #10b981;
+        }
+
+        * {
+            box-sizing: border-box !important;
         }
 
         body {
@@ -105,11 +110,13 @@
             width: 100%;
             margin-bottom: 12px;
             transition: background 0.2s;
+            display: block;
+            text-align: center;
         }
 
         .btn:hover { background-color: var(--primary-hover); }
         .btn-secondary { background-color: #6b7280; }
-        .btn-accent { background-color: var(--accent); width: auto; padding: 8px 16px; font-size: 14px; }
+        .btn-accent { background-color: var(--accent); width: 100%; padding: 14px 20px; font-size: 16px; }
         .hidden { display: none !important; }
 
         .menu-options {
@@ -119,17 +126,22 @@
             margin-top: 15px;
         }
 
-        input, select {
-            width: 100%;
-            max-width: 100%;
+        /* תיקון מקיף לשדות קלט ב-iOS Safari */
+        input[type="time"], select {
+            width: 100% !important;
+            max-width: 100% !important;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
-            font-size: 16px;
-            box-sizing: border-box;
-            margin: 0 auto 12px auto;
+            font-size: 18px;
+            margin: 0 0 12px 0;
             text-align: center;
             display: block;
+            background-color: #f9fafb;
+            color: var(--text-color);
+            -webkit-appearance: none;
+            appearance: none;
+            direction: ltr; /* יישור מספרים ומציג שעה תקינה */
         }
 
         .card {
@@ -211,7 +223,7 @@
     <!-- מסך תפריט -->
     <div id="meal-screen" class="hidden">
         <h2>תפריט תזונה 🥗</h2>
-        <label for="time-input">מה השעה עכשיו? (פורמט 24 שעות):</label>
+        <label for="time-input" style="display:block; text-align:center; margin-bottom:8px;">מה השעה עכשיו? (פורמט 24 שעות):</label>
         <input type="time" id="time-input" value="14:00">
         <button class="btn" onclick="calculateMeal()">הצג אופציות לארוחה זו</button>
 
@@ -234,7 +246,7 @@
             </select>
         </div>
 
-        <label for="day-select">איזה יום היום?</label>
+        <label for="day-select" style="display:block; text-align:center; margin-bottom:6px;">איזה יום היום?</label>
         <select id="day-select" onchange="loadWorkout()">
             <option value="1">יום ראשון</option>
             <option value="2">יום שני</option>
@@ -255,7 +267,7 @@
         <p style="text-align: center; color: var(--subtext);">בחר באיזו שעה תרצה לקבל תזכורת להתאמן ולשמור על ה-Streak:</p>
         <input type="time" id="notif-time" value="16:00">
         <button class="btn" onclick="setDailyReminder()">שמור התראה</button>
-        <button class="btn btn-accent" style="width: 100%; margin-top: 5px;" onclick="testNotification()">בדוק התראה עכשיו 🔔</button>
+        <button class="btn btn-accent" onclick="testNotification()">בדוק התראה עכשיו 🔔</button>
         <div id="notif-status" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
@@ -606,7 +618,7 @@
                             <span class="exercise-title">${ex.name}</span>
                             <span class="exercise-sub">${lvlData.sets} סטים x ${lvlData.reps}</span>
                         </div>
-                        <button class="btn btn-accent" onclick="startWorkoutRoutine(${day}, ${idx})">התחל</button>
+                        <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startWorkoutRoutine(${day}, ${idx})">התחל</button>
                     </div>
                 `;
             }
@@ -739,4 +751,4 @@
     scheduleNotificationCheck();
 </script>
 </body>
-</html>
+</html>י
