@@ -18,22 +18,13 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'API Key not configured on server' });
   }
 
+  // אם הועלתה תמונה, ניצור הודעה טקסטואלית מתאימה עבור המודל
+  let userMessage = message;
+  if (image && !message) {
+    userMessage = "המשתמש העלה תמונה של אוכל. תן הערכה מקצועית, מעודדת וקצרה בעברית לגבי הרכיבים והקלוריות המשוערות של מנה כזו.";
+  }
+
   try {
-    let contentPayload = [];
-
-    if (message) {
-      contentPayload.push({ type: "text", text: message });
-    }
-
-    if (image) {
-      contentPayload.push({
-        type: "image_url",
-        image_url: { url: image }
-      });
-    } else if (!message) {
-      contentPayload.push({ type: "text", text: "נתח את התמונה הזו מבחינת תזונה וקלוריות, ותן הערכה קצרה בעברית." });
-    }
-
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -45,9 +36,9 @@ export default async function handler(req, res) {
         messages: [
           { 
             role: 'system', 
-            content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. כאשר המשתמש שולח תמונה של אוכל, נתח אותה, הערך את הרכיבים והקלוריות שלה בקצרה ובתמיכה.' 
+            content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. אתה עונה תשובות מדויקות, קצרות, מועילות, ותומכות למשתמש.' 
           },
-          { role: 'user', content: contentPayload }
+          { role: 'user', content: userMessage }
         ],
         temperature: 0.7
       })
