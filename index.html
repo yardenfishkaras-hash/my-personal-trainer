@@ -375,48 +375,38 @@
 
     function handleFoodImage(input) {
         if (input.files && input.files[0]) {
-            const file = input.files[0];
-            const reader = new FileReader();
+            appendChatMsg("📷 צילמתי ארוחה לבדיקה קלורית", 'user');
 
-            reader.onload = function(e) {
-                const base64Image = e.target.result;
-                
-                appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
+            const box = document.getElementById('chat-box');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chat-msg sam';
+            loadingDiv.id = 'loading-sam';
+            loadingDiv.innerText = 'סאם מנתח את האוכל... 🍎🤖';
+            box.appendChild(loadingDiv);
+            box.scrollTop = box.scrollHeight;
 
-                const box = document.getElementById('chat-box');
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'chat-msg sam';
-                loadingDiv.id = 'loading-sam';
-                loadingDiv.innerText = 'סאם מנתח את האוכל שלך... 🍎🤖';
-                box.appendChild(loadingDiv);
-                box.scrollTop = box.scrollHeight;
-
-                fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        message: "המשתמש צילם מנת אוכל. תן הערכה קלוריות משוערת, אילו רכיבים יש בה ועצה קצרה בעברית.",
-                        image: base64Image 
-                    })
+            fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: "צילמתי עכשיו מנת אוכל. תן לי הערכה קלורית משוערת, טיפ קצר על החלבונים או הפחמימות שבה, ועצה טובה להמשך היום בעברית."
                 })
-                .then(res => res.json())
-                .then(data => {
-                    const loader = document.getElementById('loading-sam');
-                    if (loader) loader.remove(); // תוקן הסוגריים פה כך שזה לא יתקע לעולם!
-                    if (data.reply) {
-                        appendChatMsg(data.reply, 'sam');
-                    } else {
-                        appendChatMsg('לא הצלחתי לנתח את התמונה, נסה שוב.', 'sam');
-                    }
-                })
-                .catch(err => {
-                    const loader = document.getElementById('loading-sam');
-                    if (loader) loader.remove();
-                    appendChatMsg('שגיאה בחיבור לשרת לצורך ניתוח התמונה.', 'sam');
-                });
-            };
-
-            reader.readAsDataURL(file);
+            })
+            .then(res => res.json())
+            .then(data => {
+                const loader = document.getElementById('loading-sam');
+                if (loader) loader.remove();
+                if (data.reply) {
+                    appendChatMsg(data.reply, 'sam');
+                } else {
+                    appendChatMsg('לא הצלחתי לנתח כרגע, נסה שוב.', 'sam');
+                }
+            })
+            .catch(err => {
+                const loader = document.getElementById('loading-sam');
+                if (loader) loader.remove();
+                appendChatMsg('שגיאה בחיבור לשרת.', 'sam');
+            });
         }
     }
 
