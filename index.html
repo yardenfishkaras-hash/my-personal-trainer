@@ -119,8 +119,6 @@
         .btn:hover { background-color: var(--primary-hover); }
         .btn-secondary { background-color: #6b7280; }
         .btn-accent { background-color: var(--accent); width: 100%; padding: 14px 20px; font-size: 16px; }
-        .btn-whatsapp { background-color: #25d366; }
-        .btn-whatsapp:hover { background-color: #1ebe5d; }
         .hidden { display: none !important; }
 
         .menu-options {
@@ -130,20 +128,21 @@
             margin-top: 15px;
         }
 
-        input[type="time"], input[type="number"], input[type="text"], select {
+        input[type="time"], input[type="number"], select {
             width: 100% !important;
             max-width: 100% !important;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
-            font-size: 16px;
-            margin: 0 0 10px 0;
-            text-align: right;
+            font-size: 18px;
+            margin: 0 0 12px 0;
+            text-align: center;
             display: block;
             background-color: #f9fafb;
             color: var(--text-color);
             -webkit-appearance: none;
             appearance: none;
+            direction: ltr;
         }
 
         .card {
@@ -206,7 +205,7 @@
         <span id="streak-display" class="streak-count">0 ימים</span>
     </div>
 
-    <!-- באנר התראת פרס סטריק שמופיע כשמגיעים ליעד -->
+    <!-- באנר התראת פרס סטריק שמופיע אוטומטית כשמגיעים ליעד -->
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
         <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
         <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ לפתיחת וואטסאפ עם הודעה מוכנה)</div>
@@ -319,11 +318,13 @@
 
 <script>
     // --- STREAK REWARD WHATSAPP INTEGRATION ---
-    let currentStreakDaysForReward = 7; // משתנה שישמור את סוג הסטרייק שהושג
+    let currentStreakDaysForReward = 1;
 
     function sendRewardToMom() {
-        let periodName = "שבוע";
-        if (currentStreakDaysForReward === 14) periodName = "שבועיים";
+        let periodName = "יום אחד";
+        if (currentStreakDaysForReward === 1) periodName = "יום אחד";
+        else if (currentStreakDaysForReward === 7) periodName = "שבוע";
+        else if (currentStreakDaysForReward === 14) periodName = "שבועיים";
         else if (currentStreakDaysForReward === 30) periodName = "חודש";
         else if (currentStreakDaysForReward === 90) periodName = "שלושה חודשים";
         else if (currentStreakDaysForReward === 180) periodName = "חצי שנה";
@@ -334,16 +335,15 @@
         const encoded = encodeURIComponent(message);
         window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
         
-        // סגירת הבאנר לאחר שליחה
         document.getElementById('reminder-alert-box').classList.add('hidden');
     }
 
     function checkStreakMilestones(streak) {
-        // בדיקה האם הגענו לאחד מהסטרייקים המבוקשים: 7, 14, 30, 90, 180, 270, 365
-        const milestones = [7, 14, 30, 90, 180, 270, 365];
+        // מילסטונים כולל יום ראשון: 1, 7, 14, 30, 90, 180, 270, 365
+        const milestones = [1, 7, 14, 30, 90, 180, 270, 365];
         if (milestones.includes(streak)) {
             currentStreakDaysForReward = streak;
-            let periodName = streak === 7 ? "שבוע" : streak === 14 ? "שבועיים" : streak === 30 ? "חודש" : streak === 90 ? "שלושה חודשים" : streak === 180 ? "חצי שנה" : streak === 270 ? "תשעה חודשים" : "שנה שלמה";
+            let periodName = streak === 1 ? "יום ראשון" : streak === 7 ? "שבוע" : streak === 14 ? "שבועיים" : streak === 30 ? "חודש" : streak === 90 ? "שלושה חודשים" : streak === 180 ? "חצי שנה" : streak === 270 ? "תשעה חודשים" : "שנה שלמה";
             
             document.getElementById('reminder-alert-text').innerText = `🎉 כל הכבוד! הגעת לרצף של ${periodName} באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚`;
             document.getElementById('reminder-alert-box').classList.remove('hidden');
@@ -352,12 +352,12 @@
 
     function testStreakRewardNotification() {
         playBeep(880, 0.6);
-        currentStreakDaysForReward = 7;
-        document.getElementById('reminder-alert-text').innerText = "🎉 כל הכבוד! הגעת לרצף של שבוע באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚";
+        currentStreakDaysForReward = 1;
+        document.getElementById('reminder-alert-text').innerText = "🎉 כל הכבוד! הגעת לרצף של יום ראשון באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚";
         document.getElementById('reminder-alert-box').classList.remove('hidden');
 
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("המאמן האישי 🏋️‍♂️", { body: "הגעת לרצף שבועי! לחץ לשליחת בקשת פרס לאמא." });
+            new Notification("המאמן האישי 🏋️‍♂️", { body: "הגעת לרצף של יום ראשון! לחץ לשליחת בקשת פרס לאמא." });
         }
     }
 
