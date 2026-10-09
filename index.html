@@ -369,7 +369,6 @@
             return;
         }
 
-        // נוסחת Mifflin-St Jeor לחישוב BMR
         let bmr = (10 * weight) + (6.25 * height) - (5 * age);
         if (gender === 'male') {
             bmr += 5;
@@ -378,13 +377,13 @@
         }
 
         const tdee = Math.round(bmr * activity);
-        const weightLoss = tdee - 400; // גירעון קלורי מתון ובריא
-        const muscleGain = tdee + 300; // פלוס קלורי לבניית שריר
+        const weightLoss = tdee - 400;
+        const muscleGain = tdee + 300;
 
         resultDiv.innerHTML = `
             <div style="font-size: 14px; font-weight: bold; color: #059669; margin-bottom: 8px; text-align: center;">תוצאות חישוב הקלוריות שלך:</div>
             • <b>קלוריות במנוחה (BMR):</b> כ-${Math.round(bmr)} קלוריות.<br>
-            • <b>הוצאה יו כוללת (TDEE):</b> כ-<b>${tdee}</b> קלוריות ביום לפי רמת הפעילות שלך.<br><br>
+            • <b>הוצאה יומית כוללת (TDEE):</b> כ-<b>${tdee}</b> קלוריות ביום לפי רמת הפעילות שלך.<br><br>
             <div style="background: #e6f4ea; padding: 10px; border-radius: 8px; font-size: 13px;">
                 🎯 <b>המלצות ליעדים:</b><br>
                 • שמירת משקל: כ-<b>${tdee}</b> קלוריות.<br>
@@ -420,7 +419,7 @@
         const milestones = [1, 7, 14, 30, 90, 180, 270, 365];
         if (milestones.includes(streak)) {
             currentStreakDaysForReward = streak;
-            let periodName = streak === 1 ? "יום ראשון" : streak === 7 ? "שבוע" : streak === 14 ? "שבועיים" : streak === 30 ? "חודש" : streak === 90 ? "שלושה חודשים" : streak === 180 ? "חצי שנה" : streak === 270 ? "תשעה חודשים" : "שנה שלמה";
+            let periodName = streak === 1 ? "יום אחד" : streak === 7 ? "שבוע" : streak === 14 ? "שבועיים" : streak === 30 ? "חודש" : streak === 90 ? "שלושה חודשים" : streak === 180 ? "חצי שנה" : streak === 270 ? "תשעה חודשים" : "שנה שלמה";
             
             document.getElementById('reminder-alert-text').innerText = `🎉 כל הכבוד! הגעת לרצף של ${periodName} באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚`;
             document.getElementById('reminder-alert-box').classList.remove('hidden');
@@ -430,11 +429,11 @@
     function testStreakRewardNotification() {
         playBeep(880, 0.6);
         currentStreakDaysForReward = 1;
-        document.getElementById('reminder-alert-text').innerText = "🎉 כל הכבוד! הגעת לרצף של יום ראשון באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚";
+        document.getElementById('reminder-alert-text').innerText = "🎉 כל הכבוד! הגעת לרצף של יום אחד באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚";
         document.getElementById('reminder-alert-box').classList.remove('hidden');
 
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("המאמן האישי 🏋️‍♂️", { body: "הגעת לרצף של יום ראשון! לחץ לשליחת בקשת פרס לאמא." });
+            new Notification("המאמן האישי 🏋️‍♂️", { body: "הגעת לרצף של יום אחד! לחץ לשליחת בקשת פרס לאמא." });
         }
     }
 
