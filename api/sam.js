@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message } = req.body;
+  const { message, image } = req.body;
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
@@ -19,6 +19,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    let contentPayload = [];
+
+    if (message) {
+      contentPayload.push({ type: "text", text: message });
+    }
+
+    if (image) {
+      contentPayload.push({
+        type: "image_url",
+        image_url: { url: image }
+      });
+    } else if (!message) {
+      contentPayload.push({ type: "text", text: "נתח את התמונה הזו מבחינת תזונה וקלוריות, ותן הערכה קצרה בעברית." });
+    }
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -26,10 +41,13 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-20b', // מודל פעיל ויציב לחלוטין בשרתים של Groq
+        model: 'openai/gpt-oss-20b',
         messages: [
-          { role: 'system', content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. אתה עונה תשובות מדויקות, קצרות, מועילות, ותומכות למשתמש.' },
-          { role: 'user', content: message }
+          { 
+            role: 'system', 
+            content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. כאשר המשתמש שולח תמונה של אוכל, נתח אותה, הערך את הרכיבים והקלוריות שלה בקצרה ובתמיכה.' 
+          },
+          { role: 'user', content: contentPayload }
         ],
         temperature: 0.7
       })
