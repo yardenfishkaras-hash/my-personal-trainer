@@ -25,7 +25,9 @@
             --sam-color: #7c3aed;
         }
 
-        * { box-sizing: border-box !important; }
+        * {
+            box-sizing: border-box !important;
+        }
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -76,7 +78,14 @@
             margin-bottom: 15px;
             text-align: center;
             font-weight: bold;
+            animation: pulse 1.5s infinite;
             cursor: pointer;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
 
         .level-selector-box {
@@ -99,6 +108,7 @@
             cursor: pointer;
             width: 100%;
             margin-bottom: 12px;
+            transition: background 0.2s;
             display: block;
             text-align: center;
             text-decoration: none;
@@ -106,8 +116,9 @@
 
         .btn:hover { background-color: var(--primary-hover); }
         .btn-secondary { background-color: #6b7280; }
-        .btn-accent { background-color: var(--accent); }
+        .btn-accent { background-color: var(--accent); width: 100%; padding: 14px 20px; font-size: 16px; }
         .btn-sam { background-color: var(--sam-color); }
+        .btn-sam:hover { background-color: #6d28d9; }
         .hidden { display: none !important; }
 
         .menu-options {
@@ -120,7 +131,6 @@
         input[type="time"], input[type="number"], input[type="text"], select {
             width: 100% !important;
             max-width: 100% !important;
-            box-sizing: border-box !important;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
@@ -142,7 +152,6 @@
             padding: 15px;
             margin-bottom: 12px;
             line-height: 1.6;
-            text-align: right;
         }
 
         .chat-container {
@@ -193,8 +202,11 @@
             background: #f3f4f6;
             border-radius: 10px;
             margin-bottom: 10px;
-            text-align: right;
         }
+
+        .exercise-info { max-width: 70%; }
+        .exercise-title { font-weight: bold; display: block; }
+        .exercise-sub { font-size: 13px; color: var(--subtext); }
 
         .timer-modal {
             position: fixed;
@@ -216,7 +228,6 @@
             text-align: center;
             width: 85%;
             max-width: 340px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
         .timer-display { font-size: 56px; font-weight: bold; margin: 15px 0; }
@@ -235,9 +246,9 @@
 
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
         <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
+        <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ לפתיחת וואטסאפ עם הודעה מוכנה)</div>
     </div>
 
-    <!-- מסך ראשי -->
     <div id="home-screen">
         <h1>המאמן האישי שלי 🏋️‍♂️</h1>
         <p style="text-align: center; color: var(--subtext);">בחר מה ברצונך לבדוק עכשיו:</p>
@@ -251,7 +262,6 @@
         </div>
     </div>
 
-    <!-- מסך סאם -->
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
@@ -277,29 +287,30 @@
         </div>
     </div>
 
-    <!-- מסך תזונה -->
     <div id="meal-screen" class="hidden">
         <h2>תפריט תזונה 🥗</h2>
         <label for="time-input" style="display:block; text-align:center; margin-bottom:8px;">מה השעה עכשיו? (פורמט 24 שעות):</label>
         <input type="time" id="time-input" value="14:00">
         <button class="btn" onclick="calculateMeal()">הצג אופציות לארוחה זו</button>
+
         <div id="meal-result" class="card hidden"></div>
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מסך אימונים -->
     <div id="workout-screen" class="hidden">
         <h2>אימון יומי 🏋️</h2>
+
         <div class="level-selector-box">
             <label for="workout-level-select" style="font-weight: bold; display: block; margin-bottom: 6px;">🎯 דרגת קושי לאימון:</label>
             <select id="workout-level-select" onchange="changeFitnessLevel(this.value)">
-                <option value="level1" selected>🟢 דרגה 1: התחלה</option>
-                <option value="level2">🌱 דרגה 2: שלב 2</option>
-                <option value="level3">🟡 דרגה 3: שלב 3</option>
-                <option value="level4">🟠 דרגה 4: שלב 4</option>
-                <option value="level5">🔴 דרגה 5: מתקדם ביותר</option>
+                <option value="level1" selected>🟢 דרגה 1: האימון המקורי (התחלה)</option>
+                <option value="level2">🌱 דרגה 2: שלב 2 (עומס מוגבר קל)</option>
+                <option value="level3">🟡 דרגה 3: שלב 3 (קצב בינוני-גבוה)</option>
+                <option value="level4">🟠 דרגה 4: שלב 4 (אינטנסיבי)</option>
+                <option value="level5">🔴 דרגה 5: שלב 5 (מתקדם ביותר)</option>
             </select>
         </div>
+
         <label for="day-select" style="display:block; text-align:center; margin-bottom:6px;">איזה יום היום?</label>
         <select id="day-select" onchange="loadWorkout()">
             <option value="1">יום ראשון</option>
@@ -310,55 +321,78 @@
             <option value="6">יום שישי</option>
             <option value="7">יום שבת</option>
         </select>
+
         <div id="workout-list"></div>
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מחשבון קלוריות -->
     <div id="calories-screen" class="hidden">
         <h2>מחשבון קלוריות 🔥</h2>
-        <label style="display:block; text-align:right; font-weight:bold;">מגדר:</label>
-        <select id="cal-gender"><option value="male" selected>בן 👦</option><option value="female">בת 👧</option></select>
-        <label style="display:block; text-align:right; font-weight:bold;">גיל:</label>
-        <input type="number" id="cal-age" placeholder="למשל: 14">
-        <label style="display:block; text-align:right; font-weight:bold;">משקל (ק"ג):</label>
+        <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
+            חשב את הוצאת הקלוריות היומית שלך (TDEE) ואת היעדים שלך:
+        </p>
+
+        <label for="cal-gender" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">מגדר:</label>
+        <select id="cal-gender">
+            <option value="male" selected>בן 👦</option>
+            <option value="female">בת 👧</option>
+        </select>
+
+        <label for="cal-age" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גיל:</label>
+        <input type="number" id="cal-age" placeholder="למשל: 14" min="5" max="120">
+        
+        <label for="cal-weight" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
         <input type="number" id="cal-weight" placeholder="למשל: 55" step="0.1">
-        <label style="display:block; text-align:right; font-weight:bold;">גובה (ס"מ):</label>
+
+        <label for="cal-height" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
         <input type="number" id="cal-height" placeholder="למשל: 165">
-        <button class="btn" style="background-color: #059669;" onclick="calculateCalories()">חשב קלוריות</button>
-        <div id="calories-result" class="card hidden"></div>
-        <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
+        <button class="btn" style="background-color: #059669; margin-top: 10px;" onclick="calculateCalories()">חשב קלוריות</button>
+
+        <div id="calories-result" class="card hidden" style="text-align: right;"></div>
+
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מחשבון BMI -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
-        <label style="display:block; text-align:right; font-weight:bold;">מגדר:</label>
+        <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
+            הכנס את הפרמטרים שלך לקבלת מדד מותאם אישית:
+        </p>
+
+        <label for="bmi-gender" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">מגדר:</label>
         <select id="bmi-gender">
             <option value="male" selected>בן 👦</option>
             <option value="female">בת 👧</option>
         </select>
-        <label style="display:block; text-align:right; font-weight:bold;">משקל (ק"ג):</label>
+
+        <label for="bmi-age" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גיל:</label>
+        <input type="number" id="bmi-age" placeholder="למשל: 14" min="5" max="120">
+        
+        <label for="bmi-weight" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
         <input type="number" id="bmi-weight" placeholder="למשל: 55" step="0.1">
-        <label style="display:block; text-align:right; font-weight:bold;">גובה (ס"מ):</label>
+
+        <label for="bmi-height" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
         <input type="number" id="bmi-height" placeholder="למשל: 165">
-        <label style="display:block; text-align:right; font-weight:bold;">גיל:</label>
-        <input type="number" id="bmi-age" placeholder="למשל: 14">
+
         <button class="btn" style="background-color: #8b5cf6;" onclick="calculateBMI()">חשב BMI</button>
+
         <div id="bmi-result" class="card hidden" style="text-align: center;"></div>
-        <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
-    <!-- מסך התראות -->
     <div id="notif-screen" class="hidden">
         <h2>התראה יומית 🔔</h2>
+        <p style="text-align: center; color: var(--subtext);">בחר באיזו שעה תרצה לקבל תזכורת להתאמן ולשמור על ה-Streak:</p>
         <input type="time" id="notif-time" value="16:00">
         <button class="btn" onclick="setDailyReminder()">שמור התראה</button>
-        <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+        <button class="btn btn-accent" onclick="testStreakRewardNotification()">בדוק התראת פרס סטריק עכשיו 🎁</button>
+        <div id="notif-status" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 </div>
 
-<!-- חלון טיימר צף המקורי -->
 <div id="timer-modal" class="timer-modal hidden">
     <div class="timer-content">
         <h3 id="modal-exercise-name" style="margin-bottom: 5px;">שם התרגיל</h3>
@@ -391,7 +425,7 @@
     }
 
     function clearChatHistory() {
-        if (confirm("האם למחוק את כל היסטוריית השיחות?")) {
+        if (confirm("האם אתה בטוח שתרצה למחוק את כל היסטוריית השיחות עם סאם?")) {
             localStorage.removeItem('sam_chat_history');
             loadChatHistory();
         }
@@ -426,11 +460,11 @@
             if (data.reply) {
                 appendChatMsg(data.reply, 'sam');
             } else {
-                appendChatMsg('תקלה בקבלת תשובה.', 'sam');
+                appendChatMsg('תקבל תשובה בקרוב. נסה שוב.', 'sam');
             }
         } catch (error) {
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
-            appendChatMsg('שגיאה בחיבור לשרת.', 'sam');
+            appendChatMsg('שגיאה בחיבור לשרת של סאם.', 'sam');
         }
     }
 
@@ -486,28 +520,33 @@
         const age = parseInt(document.getElementById('cal-age').value, 10);
         const weight = parseFloat(document.getElementById('cal-weight').value);
         const height = parseFloat(document.getElementById('cal-height').value);
+        const activity = parseFloat(document.getElementById('cal-activity').value || 1.55);
         const resultDiv = document.getElementById('calories-result');
 
         if (!weight || !height || !age) {
-            alert("אנא הזן את כל הנתונים!");
+            alert("אנא הזן את כל הנתונים בצורה תקינה!");
             return;
         }
 
         let bmr = (10 * weight) + (6.25 * height) - (5 * age);
         if (gender === 'male') bmr += 5; else bmr -= 161;
-        const tdee = Math.round(bmr * 1.55);
 
-        resultDiv.innerHTML = `הוצאה יומית מוערכת (TDEE): כ-<b>${tdee}</b> קלוריות ביום.`;
+        const tdee = Math.round(bmr * activity);
+        resultDiv.innerHTML = `
+            <div style="font-size: 14px; font-weight: bold; color: #059669; margin-bottom: 8px; text-align: center;">תוצאות חישוב הקלוריות שלך:</div>
+            • <b>הוצאה יומית כוללת (TDEE):</b> כ-<b>${tdee}</b> קלוריות ביום.<br>
+        `;
         resultDiv.classList.remove('hidden');
     }
 
     function calculateBMI() {
         const weight = parseFloat(document.getElementById('bmi-weight').value);
         const heightCm = parseFloat(document.getElementById('bmi-height').value);
+        const age = parseInt(document.getElementById('bmi-age').value, 10);
         const resultDiv = document.getElementById('bmi-result');
-        if (!weight || !heightCm) { alert("הזן נתונים תקינים"); return; }
+        if (!weight || !heightCm || !age) { alert("הזן נתונים תקינים"); return; }
         const bmi = (weight / Math.pow(heightCm / 100, 2)).toFixed(1);
-        resultDiv.innerHTML = `<div style="font-size: 28px; font-weight: bold; color: #10b981;">${bmi}</div>`;
+        resultDiv.innerHTML = `<div style="font-size: 32px; font-weight: bold; color: #10b981;">${bmi}</div>`;
         resultDiv.classList.remove('hidden');
     }
 
@@ -519,13 +558,41 @@
         resultDiv.classList.remove('hidden');
     }
 
+    let currentStreakDaysForReward = 1;
+
+    function sendRewardToMom() {
+        const message = `היי אמא! הגעתי ליעד רצף באפליקציית הכושר ומגיע לי פרס!`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+        document.getElementById('reminder-alert-box').classList.add('hidden');
+    }
+
+    function checkStreakMilestones(streak) {
+        if ([1, 7, 14, 30, 90, 180, 270, 365].includes(streak)) {
+            document.getElementById('reminder-alert-box').classList.remove('hidden');
+        }
+    }
+
+    function checkAndUpdateStreak() {
+        let streak = parseInt(localStorage.getItem('user_streak') || '0', 10);
+        document.getElementById('streak-display').innerText = `${streak} ימים`;
+        checkStreakMilestones(streak);
+    }
+
     function setDailyReminder() {
         const time = document.getElementById('notif-time').value;
         localStorage.setItem('reminder_time', time);
-        alert(`התראה הוגדרה בהצלחה לשעה ${time}`);
+        document.getElementById('notif-status').innerText = `✓ התראה הוגדרה לשעה ${time}`;
+    }
+
+    function testStreakRewardNotification() {
+        document.getElementById('reminder-alert-box').classList.remove('hidden');
     }
 
     let currentLevel = localStorage.getItem('fitness_level') || 'level1';
+
+    function initLevelSelector() {
+        document.getElementById('workout-level-select').value = currentLevel;
+    }
 
     function changeFitnessLevel(newLevel) {
         currentLevel = newLevel;
@@ -559,20 +626,20 @@
         const day = document.getElementById('day-select').value;
         const data = rawWorkouts[day];
         const container = document.getElementById('workout-list');
-        let html = `<h3 style="margin-top:15px; font-size:16px;">${data.title}</h3>`;
+        let html = `<h3 style="margin-top:15px;">${data.title}</h3>`;
         
         data.exercises.forEach((ex) => {
             if (ex.isRestDay) {
-                html += `<div class="exercise-item"><span style="font-weight:bold; width:100%; text-align:center;">🧘‍♂️ ${ex.name}</span></div>`;
+                html += `<div class="exercise-item"><span class="exercise-title" style="width:100%; text-align:center;">🧘‍♂️ ${ex.name}</span></div>`;
             } else {
                 const lvl = ex[currentLevel] || ex.level1;
                 html += `
                     <div class="exercise-item">
-                        <div>
-                            <b>${ex.name}</b><br>
-                            <span style="color:var(--primary); font-weight:bold; font-size: 13px;">${lvl.sets} סטים • ${lvl.reps}</span>
+                        <div class="exercise-info">
+                            <span class="exercise-title">${ex.name}</span>
+                            <span class="exercise-sub">${lvl.sets} סטים • ${lvl.reps}</span>
                         </div>
-                        <button class="btn" style="width: auto; margin: 0; padding: 8px 12px; font-size: 13px;" onclick='startExerciseTimer(${JSON.stringify(ex.name)}, ${JSON.stringify(lvl)})'>⏱️ הפעל</button>
+                        <button class="btn" style="width: auto; margin: 0; padding: 10px 14px;" onclick='startExerciseTimer(${JSON.stringify(ex.name)}, ${JSON.stringify(lvl)})'>⏱️ הפעל</button>
                     </div>`;
             }
         });
@@ -678,6 +745,8 @@
         }
     }
 
+    initLevelSelector();
+    checkAndUpdateStreak();
     loadChatHistory();
 </script>
 </body>
