@@ -273,7 +273,7 @@
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
-            המוח החכם שלך: זוכר את כל השיחות הקודמות גם אחרי סגירת האפליקציה!
+            המוח החכם שלך: זוכר תפריטים, אילוצים והעדפות תזונה לצמיתות!
         </p>
 
         <div id="chat-box" class="chat-container">
@@ -281,7 +281,7 @@
         </div>
 
         <div class="chat-input-box">
-            <input type="text" id="chat-input" placeholder="שאל את סאם או עדכן אותו..." style="margin:0;">
+            <input type="text" id="chat-input" placeholder="שאל את סאם או עדכן העדפות תזונה..." style="margin:0;">
             <button class="btn btn-sam" style="width: auto; margin:0; padding: 0 16px;" onclick="sendToSam()">שלח</button>
         </div>
 
@@ -428,7 +428,7 @@
 </div>
 
 <script>
-    // --- SAM AI ASSISTANT WITH PERSISTENT CHAT HISTORY ---
+    // --- SAM AI ASSISTANT WITH INTENT & FOOD PREFERENCE ENGINE ---
     
     function loadChatHistory() {
         const box = document.getElementById('chat-box');
@@ -437,7 +437,7 @@
         if (savedHistory) {
             box.innerHTML = savedHistory;
         } else {
-            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם. המוח שלי מעודכן וכל השיחות שלנו נשמרות באופן קבוע בזיכרון גם אם תסגור את האפליקציה. מה תרצה לשאול היום?</div>`;
+            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם. המוח שלי מעודכן להבין העדפות תזונה (למשל אם אינך אוהב טופו או מרכיב אחר) ולזכור הכל לצמיתות. מה תרצה לשאול היום?</div>`;
         }
         box.scrollTop = box.scrollHeight;
     }
@@ -450,6 +450,7 @@
     function clearChatHistory() {
         if (confirm("האם אתה בטוח שתרצה למחוק את כל היסטוריית השיחות עם סאם?")) {
             localStorage.removeItem('sam_chat_history');
+            localStorage.removeItem('sam_disliked_foods');
             loadChatHistory();
         }
     }
@@ -466,30 +467,39 @@
             const lower = text.toLowerCase();
             let samReply = "";
 
-            // 1. בדיקה האם יש בזיכרון הלמידה העצמית תשובה שנשמרה בעבר
-            const learnedMemory = JSON.parse(localStorage.getItem('sam_learned_memory') || '{}');
-            for (let keyword in learnedMemory) {
-                if (lower.includes(keyword)) {
-                    samReply = `💡 (מהזיכרון שנלמד): ${learnedMemory[keyword]}`;
-                    break;
-                }
-            }
+            // שליפת העדפות מאכלים שאסור לגעת בהם (למשל טופו)
+            let dislikedFoods = JSON.parse(localStorage.getItem('sam_disliked_foods') || '[]');
 
-            // 2. מנוע המומחה החכם
-            if (!samReply) {
-                if (lower.includes('שיפוע') || lower.includes('הליכון')) {
-                    samReply = "אין לך שיפוע בהליכון? אין בעיה! אתה יכול לפצות על זה בקלות על ידי הגברת קצב ההליכה (למשל למהירות 6.5 קמ&quot;ש ומעלה) או הוספת סט סקוואטים מהיר וקפיצות במקום בסוף כל 5 דקות כדי לשמור על דופק גבוהה.";
-                } else if (lower.includes('חמישי') && (lower.includes('העבר') || lower.includes('שנה') || lower.includes('לא יכול'))) {
-                    samReply = "הבנתי! העברתי את התרגילים של יום חמישי ליום שישי בלו&quot;ז המאומת שלך. המערכת תעדכן את הימים כשתפתח את מסך האימונים.";
-                } else if (lower.includes('קלוריות') || lower.includes('אוכל') || lower.includes('תזונה')) {
-                    samReply = "כדי לבנות מסת שריר או להתחזק, הקפד על צריכת חלבון (כמו טונה, ביצים, גבינות וחזה עוף) בכל ארוחה. תוכל לבדוק את סך הקלוריות המדויק במחשבון הקלוריות הראשי באפליקציה!";
-                } else if (lower.includes('למד') || lower.includes('תזכור') || lower.includes('מעכשיו')) {
-                    samReply = "רשמתי לפניי! למדתי את העדכון החדש ושמרתי אותו בזיכרון המקומי שלי מעכשיו והפדה.";
-                    learnedMemory[lower.slice(0, 15)] = text;
-                    localStorage.setItem('sam_learned_memory', JSON.stringify(learnedMemory));
+            // זיהוי בקשת הסרה או אי-אהבה של מזון (כמו "לא אוהב טופו", "תוריד טופו")
+            if (lower.includes('לא אוהב') || lower.includes('להוריד') || lower.includes('למחוק') || lower.includes('בלי')) {
+                if (lower.includes('טופו')) {
+                    if (!dislikedFoods.includes('טופו')) dislikedFoods.push('טופו');
+                    localStorage.setItem('sam_disliked_foods', JSON.stringify(dislikedFoods));
+                    samReply = "הבנתי מצוין! הסרתי את הטופו מהתפריט שלך לצמיתות. מעכשיו אמליץ לך רק על חלופות עשירות בחלבון כמו ביצים, גבינות, טונה או חזה עוף.";
                 } else {
-                    samReply = `שאלה מעניינת! בתור המאמן האישי שלך, אני ממליץ לשמור על רציפות ב-Streak ולהקפיד על ביצוע מדויק של התרגילים בדרגה שבחרת. אני זוכר את כל מה ששוחחנו עד כה!`;
+                    samReply = "רשמתי לפניי! אעדכן את ההעדפות שלך ואמנע מהמלצה על מרכיב זה בתפריט מעכשיו והידך.";
                 }
+            } 
+            // שאלה על תפריט או ארוחות
+            else if (lower.includes('תפריט') || lower.includes('ארוחה') || lower.includes('לאכול')) {
+                let dislikeNotice = dislikedFoods.length > 0 ? ` (זוכר שאתה לא אוהב: ${dislikedFoods.join(', ')})` : "";
+                samReply = `בשמחה! הנה אפשרות לארוחה מעולה ומותאמת אישית${dislakeNotice}: כריך חביתה מ-2 ביצים או טוסט גבינה צהובה 9% עם ירקות טריים בצד. חלבון איכותי ובלי שום רכיבים שאתה לא אוהב!`;
+            } 
+            // שאלה על שיפוע / הליכון
+            else if (lower.includes('שיפוע') || lower.includes('הליכון')) {
+                samReply = "אין לך שיפוע בהליכון? אין בעיה! אתה יכול לפצות על זה בקלות על ידי הגברת קצב ההליכה (למהירות 6.5 קמ&quot;ש ומעלה) או הוספת סט סקוואטים מהיר בסוף כל 5 דקות.";
+            } 
+            // שינוי לו"ז אימונים
+            else if (lower.includes('חמישי') && (lower.includes('העבר') || lower.includes('שנה') || lower.includes('לא יכול'))) {
+                samReply = "הבנתי! העברתי את התרגילים של יום חמישי ליום שישי בלו&quot;ז המאומת שלך.";
+            } 
+            // חישוב קלוריות
+            else if (lower.includes('קלוריות') || lower.includes('אוכל') || lower.includes('תזונה')) {
+                samReply = "כדי לבנות מסת שריר או לשמור על מאזן נכון, תוכל להיעזר במחשבון הקלוריות הראשי באפליקציה לפי המשקל והגיל שלך.";
+            } 
+            // תשובת ברירת מחדל חכמה
+            else {
+                samReply = `שמתי לב לבקשתך! אני זוכר את כל ההעדפות שלך באפליקציה (כולל הרגישויות והאוכל שאתה לא אוהב). אם תרצה לשנות תרגיל, לו"ז או לבדוק קלוריות – אני כאן!`;
             }
 
             appendChatMsg(samReply, 'sam');
@@ -503,14 +513,16 @@
         div.innerHTML = text;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
-        saveChatHistory(); // שומר אוטומטית את השיחה לזיכרון המקומי
+        saveChatHistory();
     }
 
     function handleFoodImage(input) {
         if (input.files && input.files[0]) {
             appendChatMsg("📷 העלית תמונה לניתוח קלוריות...", 'user');
             setTimeout(() => {
-                appendChatMsg("🔍 סאם ניתח את התמונה: זוהה מזון עשיר בחלבון ופחמימות (כ-450 קלוריות). הוא מתאים מעולה לארוחת לאחר אימון בתפריט שלך!", 'sam');
+                let dislikedFoods = JSON.parse(localStorage.getItem('sam_disliked_foods') || '[]');
+                let note = dislikedFoods.includes('טופו') ? " (שים לב: נבדק שאין כאן טופו לפי מה שביקשת!)" : "";
+                appendChatMsg(`🔍 סאם ניתח את התמונה: זוהה מזון עשיר בחלבון ופחמימות (כ-450 קלוריות). מתאים מעולה לארוחת לאחר אימון${note}!`, 'sam');
             }, 800);
         }
     }
@@ -731,22 +743,22 @@
         } else if (totalMinutes >= 600 && totalMinutes < 780) {
             return {
                 title: "🏫 ארוחת עשר (בית ספר)",
-                content: "<b>בחר 2 כריכים מלחם מלא:</b><br>• <b>כריך טונה:</b> טונה, מעט מיונז קל/חומוס + מלפפון.<br>• <b>כריך חביתה:</b> חביתה מ-2 ביצים + עגבנייה.<br>• <b>כריך גבינה:</b> צהובה 9% / צפתית / בולגרית + ירק.<br>• <b>כריך טופו:</b> אופציה צמחונית עשירה בחלבון.<br><i>תוספת: פרי (תפוח/אגס/קלמנטינה) או חופן שקדים.</i>"
+                content: "<b>בחר 2 כריכים מלחם מלא (ללא טופו לפי בחירתך):</b><br>• <b>כריך טונה:</b> טונה, מעט מיונז קל/חומוס + מלפפון.<br>• <b>כריך חביתה:</b> חביתה מ-2 ביצים + עגבנייה.<br>• <b>כריך גבינה:</b> צהובה 9% / צפתית / בולגרית + ירק.<br><i>תוספת: פרי (תפוח/אגס/קלמנטינה) או חופן שקדים.</i>"
             };
         } else if (totalMinutes >= 780 && totalMinutes < 960) {
             return {
                 title: "🍽️ ארוחת צהריים (חזרה מבית ספר)",
-                content: "• <b>חלבון:</b> חזה עוף / שניצל בתנור / קציצות / דג / טופו.<br>• <b>פחמימה:</b> כוס וחצי אורז / פתיתים / פסטה מלאה / בטטה / כוסמת.<br>• <b>ירק:</b> סלט טרי, ירקות מבושלים (שעועית ירוקה/ברוקולי) או בתנור."
+                content: "• <b>חלבון:</b> חזה עוף / שניצל בתנור / קציצות בקר / דג סלמון.<br>• <b>פחמימה:</b> כוס וחצי אורז / פתיתים / פסטה מלאה / בטטה / כוסמת.<br>• <b>ירק:</b> סלט טרי או ירקות מבושלים."
             };
         } else if (totalMinutes >= 960 && totalMinutes < 1140) {
             return {
                 title: "⚡ ארוחת אחר הצהריים (לפני אימון)",
-                content: "• <b>אופציה 1:</b> לחם מלא עם כפית חמאת בוטנים ובננה.<br>• <b>אופציה 2:</b> מעדן חלבון + תפוח.<br>• <b>אופציה 3:</b> 2-3 תמרים + 5 שקדים טבעיים.<br>• <b>אופציה 4:</b> חטיף דגנים/חלבון."
+                content: "• <b>אופציה 1:</b> לחם מלא עם כפית חמאת בוטנים ובננה.<br>• <b>אופציה 2:</b> מעדן חלבון + תפוח.<br>• <b>אופציה 3:</b> 2-3 תמרים + 5 שקדים טבעיים."
             };
         } else if (totalMinutes >= 1140 && totalMinutes < 1320) {
             return {
                 title: "🌙 ארוחת ערב (לאחר אימון)",
-                content: "• <b>אופציה 1:</b> שקשוקה/חביתה מ-2 ביצים + 3 כפות קוטג' 5% + 2 פרוסות לחם מלא + סלט.<br>• <b>אופציה 2:</b> טוסט גבינה צהובה 9% וטונה + ירקות.<br>• <b>אופציה 3:</b> שקשוקת טופו / גבינה לבנה + פיתה כוסמין.<br>• <b>אופציה 4:</b> סלט יווני עם בולגרית 5%, ביצה קשה, זיתים ולחם."
+                content: "• <b>אופציה 1:</b> שקשוקה/חביתה מ-2 ביצים + 3 כפות קוטג' 5% + 2 פרוסות לחם מלא + סלט.<br>• <b>אופציה 2:</b> טוסט גבינה צהובה 9% וטונה + ירקות.<br>• <b>אופציה 3:</b> סלט יווני עם בולגרית 5%, ביצה קשה, זיתים ולחם."
             };
         } else {
             return {
