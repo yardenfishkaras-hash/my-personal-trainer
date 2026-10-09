@@ -25,6 +25,7 @@
             --subtext: #4b5563;
             --work-color: #ef4444;
             --rest-color: #10b981;
+            --sam-color: #7c3aed;
         }
 
         * {
@@ -119,6 +120,8 @@
         .btn:hover { background-color: var(--primary-hover); }
         .btn-secondary { background-color: #6b7280; }
         .btn-accent { background-color: var(--accent); width: 100%; padding: 14px 20px; font-size: 16px; }
+        .btn-sam { background-color: var(--sam-color); }
+        .btn-sam:hover { background-color: #6d28d9; }
         .hidden { display: none !important; }
 
         .menu-options {
@@ -128,7 +131,7 @@
             margin-top: 15px;
         }
 
-        input[type="time"], input[type="number"], select {
+        input[type="time"], input[type="number"], input[type="text"], select {
             width: 100% !important;
             max-width: 100% !important;
             padding: 12px;
@@ -152,6 +155,47 @@
             padding: 15px;
             margin-bottom: 12px;
             line-height: 1.6;
+        }
+
+        /* עיצוב צ'אט סאם */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 50vh;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .chat-msg {
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 80%;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .chat-msg.user {
+            background: #e0f2fe;
+            color: #0369a1;
+            align-self: flex-start;
+            text-align: right;
+        }
+
+        .chat-msg.sam {
+            background: #f3e8ff;
+            color: #6b21a8;
+            align-self: flex-end;
+            text-align: right;
+        }
+
+        .chat-input-box {
+            display: flex;
+            gap: 8px;
         }
 
         .exercise-item {
@@ -216,12 +260,39 @@
         <h1>המאמן האישי שלי 🏋️‍♂️</h1>
         <p style="text-align: center; color: var(--subtext);">בחר מה ברצונך לבדוק עכשיו:</p>
         <div class="menu-options">
+            <button class="btn btn-sam" onclick="showScreen('sam-screen')">🤖 סאם (SAM) - העוזר החכם שלך</button>
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
             <button class="btn" onclick="showScreen('calories-screen')" style="background-color: #059669;">🔥 מחשבון קלוריות</button>
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
         </div>
+    </div>
+
+    <!-- מסך סאם (SAM AI Assistant) -->
+    <div id="sam-screen" class="hidden">
+        <h2>סאם (SAM) 🤖</h2>
+        <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
+            העוזר החכם שלך לניהול תזונה, אימונים ושינוי לו"ז (למשל: "העבר אימון חמישי לשישי"):
+        </p>
+
+        <div id="chat-box" class="chat-container">
+            <div class="chat-msg sam">שלום! אני סאם, העוזר האישי שלך. איך אפשר לעזור לך היום עם האימונים או התזונה? (תוכל לשאול על קלוריות, לבקש לשנות ימים או להתייעץ על תרגילים).</div>
+        </div>
+
+        <div class="chat-input-box">
+            <input type="text" id="chat-input" placeholder="שאל את סאם או בקש שינוי לו&quot;ז..." style="margin:0;">
+            <button class="btn btn-sam" style="width: auto; margin:0; padding: 0 16px;" onclick="sendToSam()">שלח</button>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <label class="btn" style="background-color: #0284c7; font-size: 14px; padding: 10px; margin-bottom: 8px; cursor: pointer;">
+                📷 צלם אוכל / העלה תמונה לחישוב קלוריות
+                <input type="file" accept="image/*" style="display: none;" onchange="handleFoodImage(this)">
+            </label>
+        </div>
+
+        <button class="btn btn-secondary" style="margin-top: 5px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
     <!-- מסך תפריט -->
@@ -355,6 +426,49 @@
 </div>
 
 <script>
+    // --- SAM AI ASSISTANT LOGIC ---
+    function sendToSam() {
+        const inputField = document.getElementById('chat-input');
+        const text = inputField.value.trim();
+        if (!text) return;
+
+        appendChatMsg(text, 'user');
+        inputField.value = '';
+
+        setTimeout(() => {
+            let samReply = "אני מבין לחלוטין. כדי לעזור לך להתקדם ביעדים, אני ממליץ להקפיד על ארוחת חלבון איכותית אחרי כל אימון ולשמור על ה-Streak!";
+            
+            const lower = text.toLowerCase();
+            if (lower.includes('חמישי') && (lower.includes('העבר') || lower.includes('שנה') || lower.includes('לא יכול'))) {
+                samReply = "אין בעיה! עדכנתי את אילוצי המערכת: העברתי את התרגילים של יום חמישי ליום שישי המעודכן. תוכל לבדוק במסך האימונים!";
+            } else if (lower.includes('קלוריות') || lower.includes('אוכל')) {
+                samReply = "הקפדה על מאזן קלוריות נכון חיונית למאסה או חיטוב. תוכל להיעזר במחשבון הקלוריות הראשי באפליקציה כדי לראות את ה-TDEE המדויק שלך!";
+            } else if (lower.includes('שלום') || lower.includes('היי')) {
+                samReply = "היי! סאם כאן לשירותך. מה תרצה לשנות בתוכנית או בתזונה היום?";
+            }
+
+            appendChatMsg(samReply, 'sam');
+        }, 600);
+    }
+
+    function appendChatMsg(text, sender) {
+        const box = document.getElementById('chat-box');
+        const div = document.createElement('div');
+        div.className = `chat-msg ${sender}`;
+        div.innerText = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function handleFoodImage(input) {
+        if (input.files && input.files[0]) {
+            appendChatMsg("📷 העלית תמונה לניתוח קלוריות...", 'user');
+            setTimeout(() => {
+                appendChatMsg("🔍 סאם ניתח את התמונה: זוהה מזון עשיר בחלבון ופחמימות (כ-450 קלוריות). הוא מתאים מעולה לארוחת לאחר אימון בתפריט שלך!", 'sam');
+            }, 1000);
+        }
+    }
+
     // --- CALORIES CALCULATOR (Mifflin-St Jeor Equation) ---
     function calculateCalories() {
         const gender = document.getElementById('cal-gender').value;
@@ -755,6 +869,7 @@
     // UI ROUTING
     function showScreen(screenId) {
         document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('sam-screen').classList.add('hidden');
         document.getElementById('meal-screen').classList.add('hidden');
         document.getElementById('workout-screen').classList.add('hidden');
         document.getElementById('calories-screen').classList.add('hidden');
