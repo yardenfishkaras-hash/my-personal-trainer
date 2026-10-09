@@ -134,7 +134,7 @@
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 16px;
             margin: 0 0 12px 0;
             text-align: center;
             display: block;
@@ -142,7 +142,7 @@
             color: var(--text-color);
             -webkit-appearance: none;
             appearance: none;
-            direction: ltr;
+            direction: rtl;
         }
 
         .card {
@@ -218,6 +218,7 @@
         <div class="menu-options">
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
+            <button class="btn" onclick="showScreen('calories-screen')" style="background-color: #059669;">🔥 מחשבון קלוריות</button>
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
         </div>
@@ -264,6 +265,43 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך מחשבון קלוריות -->
+    <div id="calories-screen" class="hidden">
+        <h2>מחשבון קלוריות 🔥</h2>
+        <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
+            חשב את הוצאת הקלוריות היומית שלך (TDEE) ואת היעדים שלך:
+        </p>
+
+        <label for="cal-gender" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">מגדר:</label>
+        <select id="cal-gender">
+            <option value="male" selected>בן 👦</option>
+            <option value="female">בת 👧</option>
+        </select>
+
+        <label for="cal-age" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גיל:</label>
+        <input type="number" id="cal-age" placeholder="למשל: 14" min="5" max="120">
+        
+        <label for="cal-weight" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
+        <input type="number" id="cal-weight" placeholder="למשל: 55" step="0.1">
+
+        <label for="cal-height" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
+        <input type="number" id="cal-height" placeholder="למשל: 165">
+
+        <label for="cal-activity" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">רמת פעילות גופנית:</label>
+        <select id="cal-activity">
+            <option value="1.2">יושבני (במעט או ללא פעילות מיוחדת)</option>
+            <option value="1.375">קל (אימון/הליכה 1-3 פעמים בשבוע)</option>
+            <option value="1.55" selected>בינוני (אימון 3-5 פעמים בשבוע - כמו האפליקציה!)</option>
+            <option value="1.725">פעיל מאוד (אימון קשה 6-7 פעמים בשבוע)</option>
+        </select>
+
+        <button class="btn" style="background-color: #059669; margin-top: 10px;" onclick="calculateCalories()">חשב קלוריות</button>
+
+        <div id="calories-result" class="card hidden" style="text-align: right;"></div>
+
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+    </div>
+
     <!-- מסך מחשבון BMI -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
@@ -271,19 +309,19 @@
             הכנס את הפרמטרים שלך לקבלת מדד מותאם אישית:
         </p>
 
-        <label for="bmi-gender" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">מגדר:</label>
-        <select id="bmi-gender" style="direction: rtl;">
+        <label for="bmi-gender" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">מגדר:</label>
+        <select id="bmi-gender">
             <option value="male" selected>בן 👦</option>
             <option value="female">בת 👧</option>
         </select>
 
-        <label for="bmi-age" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">גיל:</label>
+        <label for="bmi-age" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גיל:</label>
         <input type="number" id="bmi-age" placeholder="למשל: 14" min="5" max="120">
         
-        <label for="bmi-weight" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
+        <label for="bmi-weight" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
         <input type="number" id="bmi-weight" placeholder="למשל: 55" step="0.1">
 
-        <label for="bmi-height" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
+        <label for="bmi-height" style="display:block; text-align:right; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
         <input type="number" id="bmi-height" placeholder="למשל: 165">
 
         <button class="btn" style="background-color: #8b5cf6;" onclick="calculateBMI()">חשב BMI</button>
@@ -317,6 +355,46 @@
 </div>
 
 <script>
+    // --- CALORIES CALCULATOR (Mifflin-St Jeor Equation) ---
+    function calculateCalories() {
+        const gender = document.getElementById('cal-gender').value;
+        const age = parseInt(document.getElementById('cal-age').value, 10);
+        const weight = parseFloat(document.getElementById('cal-weight').value);
+        const height = parseFloat(document.getElementById('cal-height').value);
+        const activity = parseFloat(document.getElementById('cal-activity').value);
+        const resultDiv = document.getElementById('calories-result');
+
+        if (!weight || !height || !age || height <= 0 || weight <= 0 || age <= 0) {
+            alert("אנא הזן את כל הנתונים בצורה תקינה!");
+            return;
+        }
+
+        // נוסחת Mifflin-St Jeor לחישוב BMR
+        let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+        if (gender === 'male') {
+            bmr += 5;
+        } else {
+            bmr -= 161;
+        }
+
+        const tdee = Math.round(bmr * activity);
+        const weightLoss = tdee - 400; // גירעון קלורי מתון ובריא
+        const muscleGain = tdee + 300; // פלוס קלורי לבניית שריר
+
+        resultDiv.innerHTML = `
+            <div style="font-size: 14px; font-weight: bold; color: #059669; margin-bottom: 8px; text-align: center;">תוצאות חישוב הקלוריות שלך:</div>
+            • <b>קלוריות במנוחה (BMR):</b> כ-${Math.round(bmr)} קלוריות.<br>
+            • <b>הוצאה יו כוללת (TDEE):</b> כ-<b>${tdee}</b> קלוריות ביום לפי רמת הפעילות שלך.<br><br>
+            <div style="background: #e6f4ea; padding: 10px; border-radius: 8px; font-size: 13px;">
+                🎯 <b>המלצות ליעדים:</b><br>
+                • שמירת משקל: כ-<b>${tdee}</b> קלוריות.<br>
+                • בניית שריר / מאסה נקייה: כ-<b>${muscleGain}</b> קלוריות.<br>
+                • ירידה מבוקרת במשקל: כ-<b>${weightLoss}</b> קלוריות.
+            </div>
+        `;
+        resultDiv.classList.remove('hidden');
+    }
+
     // --- STREAK REWARD WHATSAPP INTEGRATION ---
     let currentStreakDaysForReward = 1;
 
@@ -339,7 +417,6 @@
     }
 
     function checkStreakMilestones(streak) {
-        // מילסטונים כולל יום ראשון: 1, 7, 14, 30, 90, 180, 270, 365
         const milestones = [1, 7, 14, 30, 90, 180, 270, 365];
         if (milestones.includes(streak)) {
             currentStreakDaysForReward = streak;
@@ -681,6 +758,7 @@
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('meal-screen').classList.add('hidden');
         document.getElementById('workout-screen').classList.add('hidden');
+        document.getElementById('calories-screen').classList.add('hidden');
         document.getElementById('bmi-screen').classList.add('hidden');
         document.getElementById('notif-screen').classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
