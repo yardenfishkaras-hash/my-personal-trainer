@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant', // המודל הפעיל והיציב ביותר ב-Groq
+        model: 'llama-3.1-8b-instant', // המודל היציב והרשמי של Groq
         messages: [
           { role: 'system', content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. אתה עונה תשובות מדויקות, קצרות, מועילות, ותומכות למשתמש.' },
           { role: 'user', content: message }
