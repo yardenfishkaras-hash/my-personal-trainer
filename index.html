@@ -404,16 +404,6 @@
     </div>
 </div>
 
-<div id="timer-modal" class="timer-modal hidden">
-    <div class="timer-content">
-        <h3 id="timer-title">תרגיל</h3>
-        <div id="set-counter" class="set-counter">סט 1</div>
-        <div id="timer-status" style="font-weight: bold; font-size: 20px;">התארגן...</div>
-        <div id="timer-display" class="timer-display work">00:30</div>
-        <button class="btn btn-secondary" onclick="closeTimer()">סגור / בטל</button>
-    </div>
-</div>
-
 <script>
     function loadChatHistory() {
         const box = document.getElementById('chat-box');
@@ -421,7 +411,7 @@
         if (savedHistory) {
             box.innerHTML = savedHistory;
         } else {
-            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני יכול לעזור לך בכל מה שתצטרך!</div>`;
+            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני מחובר למוח אמיתי ויכול לעזור לך בכל מה שתצטרך!</div>`;
         }
         box.scrollTop = box.scrollHeight;
     }
@@ -489,10 +479,46 @@
 
     function handleFoodImage(input) {
         if (input.files && input.files[0]) {
-            appendChatMsg("📷 העלית תמונה לניתוח קלוריות...", 'user');
-            setTimeout(() => {
-                appendChatMsg("🔍 ניתוח התמונה דרך השרת המאובטח פעיל!", 'sam');
-            }, 800);
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                
+                appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
+
+                const box = document.getElementById('chat-box');
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'chat-msg sam';
+                loadingDiv.id = 'loading-sam';
+                loadingDiv.innerText = 'סאם מנתח את האוכל שלך... 🍎🤖';
+                box.appendChild(loadingDiv);
+                box.scrollTop = box.scrollHeight;
+
+                fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: "נתח את תמונת האוכל הזו, תגיד מה יש בה ותן הערכה קלורית משוערת בקצרה בעברית.",
+                        image: base64Image 
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('loading-sam').remove();
+                    if (data.reply) {
+                        appendChatMsg(data.reply, 'sam');
+                    } else {
+                        appendChatMsg('לא הצלחתי לנתח את התמונה, נסה שוב.', 'sam');
+                    }
+                })
+                .catch(err => {
+                    if(document.getElementById('loading-sam')) document.getElementById('loading-sam'.remove());
+                    appendChatMsg('שגיאה בחיבור לשרת לצורך ניתוח התמונה.', 'sam');
+                });
+            };
+
+            reader.readAsDataURL(file);
         }
     }
 
@@ -567,10 +593,6 @@
         const time = document.getElementById('notif-time').value;
         localStorage.setItem('reminder_time', time);
         document.getElementById('notif-status').innerText = `✓ התראה הוגדרה לשעה ${time}`;
-    }
-
-    function getMealByTime(timeStr) {
-        return { title: "ארוחה מומלצת", content: "חביתה מ-2 ביצים או טוסט גבינה צהובה עם ירקות טריים." };
     }
 
     const rawWorkouts = {
