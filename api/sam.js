@@ -11,17 +11,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message, image } = req.body;
+  const { message } = req.body;
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({ error: 'API Key not configured on server' });
-  }
-
-  // אם הועלתה תמונה, ניצור הודעה טקסטואלית מתאימה עבור המודל
-  let userMessage = message;
-  if (image && !message) {
-    userMessage = "המשתמש העלה תמונה של אוכל. תן הערכה מקצועית, מעודדת וקצרה בעברית לגבי הרכיבים והקלוריות המשוערות של מנה כזו.";
   }
 
   try {
@@ -38,7 +32,7 @@ export default async function handler(req, res) {
             role: 'system', 
             content: 'אתה סאם (SAM), עוזר כושר ותזונה אישי חכם בעברית. אתה עונה תשובות מדויקות, קצרות, מועילות, ותומכות למשתמש.' 
           },
-          { role: 'user', content: userMessage }
+          { role: 'user', content: message || "איך לשפר את התזונה והאימונים שלי?" }
         ],
         temperature: 0.7
       })
