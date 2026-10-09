@@ -79,6 +79,15 @@
             cursor: pointer;
         }
 
+        .level-selector-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
         .btn {
             background-color: var(--primary);
             color: white;
@@ -187,7 +196,6 @@
             text-align: right;
         }
 
-        /* עיצוב חלון הטיימר הצף */
         .timer-modal {
             position: fixed;
             top: 0;
@@ -282,7 +290,7 @@
     <!-- מסך אימונים -->
     <div id="workout-screen" class="hidden">
         <h2>אימון יומי 🏋️</h2>
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center;">
+        <div class="level-selector-box">
             <label for="workout-level-select" style="font-weight: bold; display: block; margin-bottom: 6px;">🎯 דרגת קושי לאימון:</label>
             <select id="workout-level-select" onchange="changeFitnessLevel(this.value)">
                 <option value="level1" selected>🟢 דרגה 1: התחלה</option>
@@ -350,7 +358,7 @@
     </div>
 </div>
 
-<!-- חלון טיימר צף (Modal) שמופעל בלחיצה על תרגיל -->
+<!-- חלון טיימר צף המקורי -->
 <div id="timer-modal" class="timer-modal hidden">
     <div class="timer-content">
         <h3 id="modal-exercise-name" style="margin-bottom: 5px;">שם התרגיל</h3>
@@ -525,7 +533,6 @@
         loadWorkout();
     }
 
-    // רשימת התרגילים המלאה
     const rawWorkouts = {
         1: { title: "יום ראשון: כוח עליון + אירובי קל", exercises: [
             { name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "10 חזרות" }, level2: { sets: 3, work: 40, rest: 50, reps: "12 חזרות" }, level3: { sets: 4, work: 45, rest: 45, reps: "15 חזרות" }, level4: { sets: 4, work: 50, rest: 40, reps: "18 חזרות" }, level5: { sets: 5, work: 60, rest: 30, reps: "20 חזרות" } },
@@ -554,7 +561,7 @@
         const container = document.getElementById('workout-list');
         let html = `<h3 style="margin-top:15px; font-size:16px;">${data.title}</h3>`;
         
-        data.exercises.forEach((ex, idx) => {
+        data.exercises.forEach((ex) => {
             if (ex.isRestDay) {
                 html += `<div class="exercise-item"><span style="font-weight:bold; width:100%; text-align:center;">🧘‍♂️ ${ex.name}</span></div>`;
             } else {
@@ -572,7 +579,6 @@
         container.innerHTML = html;
     }
 
-    // לוגיקת הטיימר והחלון הצף
     let timerInterval = null;
     let currentTimerState = {};
 
@@ -623,7 +629,6 @@
             currentTimerState.timeLeft--;
             updateTimerModalUI();
         } else {
-            // הסתיים שלב (עבודה או מנוחה)
             if (currentTimerState.isWork) {
                 if (currentTimerState.restTime > 0 && currentTimerState.currentSet < currentTimerState.sets) {
                     currentTimerState.isWork = false;
