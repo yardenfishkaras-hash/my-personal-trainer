@@ -455,10 +455,7 @@
         box.scrollTop = box.scrollHeight;
 
         try {
-            // ==========================================
-            // כאן למטה בשורה הבאה מחק את הכתובת הזו והדבק את הכתובת שקיבלת מ-Vercel:
-            // ==========================================
-            const response = await fetch('[https://my-personal-trainer-puce.vercel.app/api/sam](https://my-personal-trainer-puce.vercel.app/api/sam)', {
+            const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -587,13 +584,16 @@
     };
 
     function showScreen(screenId) {
-        document.querySelectorAll('.app-container > div').forEach(d => {
-            if(d.id && d.id !== 'home-screen' && d.id !== 'reminder-alert-box' && d.classList) {
-                d.classList.add('hidden');
-            }
-        });
         document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('sam-screen').classList.add('hidden');
+        document.getElementById('meal-screen').classList.add('hidden');
+        document.getElementById('workout-screen').classList.add('hidden');
+        document.getElementById('calories-screen').classList.add('hidden');
+        document.getElementById('bmi-screen').classList.add('hidden');
+        document.getElementById('notif-screen').classList.add('hidden');
+
         document.getElementById(screenId).classList.remove('hidden');
+
         if(screenId === 'workout-screen') loadWorkout();
         if(screenId === 'sam-screen') loadChatHistory();
     }
