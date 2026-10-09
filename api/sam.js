@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // הגדרת CORS כדי שהאפליקציה תוכל לפנות לשרת
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -37,10 +36,14 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    const reply = data.choices && data.choices[0] ? data.choices[0].message.content : 'תקלה בקבלת תשובה מסאם.';
+    
+    if (!response.ok) {
+      return res.status(500).json({ reply: 'שגיאה מהשרת של סאם: ' + (data.error?.message || 'Unknown error') });
+    }
 
+    const reply = data.choices && data.choices[0] ? data.choices[0].message.content : 'תקלה בקבלת תשובה מסאם.';
     return res.status(200).json({ reply });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to communicate with AI' });
+    return res.status(500).json({ reply: 'שגיאה בהתחברות למוח של סאם.' });
   }
 }
