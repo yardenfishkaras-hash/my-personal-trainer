@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
     <!-- אייקון האפליקציה למסך הבית באייפון -->
-    <link rel="apple-touch-icon" href="icon.png?v=2">
+    <link rel="apple-touch-icon" href=“icon.png?v=2">
     
     <style>
         :root {
@@ -207,7 +207,7 @@
 
     <!-- באנר תזכורת חירום לחיץ לסגירה -->
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="dismissReminder()">
-        🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥
+        <span id="reminder-alert-text">🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥</span>
         <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ כאן לסגירה)</div>
     </div>
 
@@ -332,8 +332,15 @@
     }
 
     // --- REMINDERS & NOTIFICATIONS ---
+    let isTestingNotif = false; // מדד שמבדיל בין בדיקה להתראה אמיתית
+
     function dismissReminder() {
         document.getElementById('reminder-alert-box').classList.add('hidden');
+        // נרשום שהתראה אמיתית טופלה להיום רק אם זו לא היתה בדיקה בלבד
+        if (!isTestingNotif) {
+            localStorage.setItem('last_notif_sent', new Date().toDateString());
+        }
+        isTestingNotif = false;
     }
 
     function setDailyReminder() {
@@ -355,11 +362,13 @@
 
     function testNotification() {
         playBeep(880, 0.6);
+        isTestingNotif = true; // מסמן שזאת רק בדיקה ולא התראת אמת
+        
+        document.getElementById('reminder-alert-text').innerText = "🧪 בדיקת התראה: המערכת עובדת מצוין!";
+        document.getElementById('reminder-alert-box').classList.remove('hidden');
+
         if ("Notification" in window && Notification.permission === "granted") {
             new Notification("המאמן האישי 🏋️‍♂️", { body: "בדיקת התראה עובדת מצוין!" });
-        } else {
-            document.getElementById('reminder-alert-box').classList.remove('hidden');
-            alert("🔔 בדיקת התראה: זמן להתאמן!");
         }
     }
 
@@ -372,16 +381,19 @@
             const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             const lastNotif = localStorage.getItem('last_notif_sent');
 
+            // התראת אמת: מופיעה בשעה שהוגדרה, אם עדיין לא הופיעה היום
             if (currentTime === savedTime && lastNotif !== now.toDateString()) {
+                isTestingNotif = false;
                 playBeep(880, 0.8);
+                document.getElementById('reminder-alert-text').innerText = "🔔 תזכורת: השעה שהגדרת הגיעה! זמן לביצוע האימון היומי 🔥";
                 document.getElementById('reminder-alert-box').classList.remove('hidden');
+                localStorage.setItem('last_notif_sent', now.toDateString());
 
                 if ("Notification" in window && Notification.permission === "granted") {
                     new Notification("המאמן האישי 🏋️‍♂️", {
                         body: "זמן להתאמן! היכנס כדי לשמור על ה-Streak שלך 🔥"
                     });
                 }
-                localStorage.setItem('last_notif_sent', now.toDateString());
             }
         }, 15000);
     }
@@ -640,7 +652,7 @@
     let restSec = 60;
 
     function startWorkoutRoutine(day, exIndex) {
-        dismissReminder(); // סוגר את ההתראה ברגע שמתחילים אימון
+        dismissReminder();
         const rawEx = rawWorkouts[day].exercises[exIndex];
         const lvlData = rawEx[currentLevel];
 
@@ -737,7 +749,7 @@
         document.getElementById('timer-modal').classList.add('hidden');
     }
 
-    // פונקציית צליל מקורית ופשוטה
+    // פונקציית צליל
     function playBeep(freq = 600, duration = 0.5) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
