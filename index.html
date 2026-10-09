@@ -108,16 +108,22 @@
             margin-top: 15px;
         }
 
+        /* תיקון מלא של שדות הקלט שיישבו ברוחב מלא ובמרכז בלי לזלוג לצד */
         input[type="time"], input[type="number"], input[type="text"], select {
             width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 16px;
             margin: 0 0 12px 0;
             text-align: center;
+            display: block;
             background-color: #f9fafb;
             color: var(--text-color);
+            -webkit-appearance: none;
+            appearance: none;
             direction: rtl;
         }
 
@@ -128,6 +134,7 @@
             padding: 15px;
             margin-bottom: 12px;
             line-height: 1.6;
+            text-align: right;
         }
 
         .chat-container {
@@ -178,6 +185,7 @@
             background: #f3f4f6;
             border-radius: 10px;
             margin-bottom: 10px;
+            text-align: right;
         }
     </style>
 </head>
@@ -190,9 +198,10 @@
     </div>
 
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
-        <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
+        <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטสאפ 💚</span>
     </div>
 
+    <!-- מסך ראשי -->
     <div id="home-screen">
         <h1>המאמן האישי שלי 🏋️‍♂️</h1>
         <p style="text-align: center; color: var(--subtext);">בחר מה ברצונך לבדוק עכשיו:</p>
@@ -206,6 +215,7 @@
         </div>
     </div>
 
+    <!-- מסך סאם -->
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
@@ -231,6 +241,7 @@
         </div>
     </div>
 
+    <!-- מסך תזונה -->
     <div id="meal-screen" class="hidden">
         <h2>תפריט תזונה 🥗</h2>
         <label for="time-input" style="display:block; text-align:center; margin-bottom:8px;">מה השעה עכשיו? (פורמט 24 שעות):</label>
@@ -240,6 +251,7 @@
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך אימונים -->
     <div id="workout-screen" class="hidden">
         <h2>אימון יומי 🏋️</h2>
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center;">
@@ -266,6 +278,7 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מחשבון קלוריות -->
     <div id="calories-screen" class="hidden">
         <h2>מחשבון קלוריות 🔥</h2>
         <label style="display:block; text-align:right; font-weight:bold;">מגדר:</label>
@@ -281,8 +294,14 @@
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מחשבון BMI (עם שורת מגדר מוחזרת!) -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
+        <label style="display:block; text-align:right; font-weight:bold;">מגדר:</label>
+        <select id="bmi-gender">
+            <option value="male" selected>בן 👦</option>
+            <option value="female">בת 👧</option>
+        </select>
         <label style="display:block; text-align:right; font-weight:bold;">משקל (ק"ג):</label>
         <input type="number" id="bmi-weight" placeholder="למשל: 55" step="0.1">
         <label style="display:block; text-align:right; font-weight:bold;">גובה (ס"מ):</label>
@@ -294,6 +313,7 @@
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך התראות -->
     <div id="notif-screen" class="hidden">
         <h2>התראה יומית 🔔</h2>
         <input type="time" id="notif-time" value="16:00">
@@ -440,10 +460,65 @@
         resultDiv.classList.remove('hidden');
     }
 
+    function calculateMeal() {
+        const timeInput = document.getElementById('time-input').value;
+        const resultDiv = document.getElementById('meal-result');
+        if (!timeInput) { alert("בחר שעה"); return; }
+        resultDiv.innerHTML = `<b>המלצה לארוחה סביב השעה ${timeInput}:</b><br>• ארוחה עשירה בחלבון ופחמימות מורכבות (כמו חזה עוף עם אורז וירקות או טונה עם ביצה קשה ולחם מלא).`;
+        resultDiv.classList.remove('hidden');
+    }
+
     function setDailyReminder() {
         const time = document.getElementById('notif-time').value;
         localStorage.setItem('reminder_time', time);
         alert(`התראה הוגדרה בהצלחה לשעה ${time}`);
+    }
+
+    let currentLevel = localStorage.getItem('fitness_level') || 'level1';
+
+    function changeFitnessLevel(newLevel) {
+        currentLevel = newLevel;
+        localStorage.setItem('fitness_level', newLevel);
+        loadWorkout();
+    }
+
+    // רשימת התרגילים המלאה שחזרה למקום!
+    const rawWorkouts = {
+        1: { title: "יום ראשון: כוח עליון + אירובי קל", exercises: [
+            { name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "10 חזרות" }, level2: { sets: 3, work: 40, rest: 50, reps: "12 חזרות" }, level3: { sets: 4, work: 45, rest: 45, reps: "15 חזרות" }, level4: { sets: 4, work: 50, rest: 40, reps: "18 חזרות" }, level5: { sets: 5, work: 60, rest: 30, reps: "20 חזרות" } },
+            { name: "פלאנק (בטן)", level1: { sets: 3, work: 30, rest: 45, reps: "30 שניות" }, level2: { sets: 3, work: 45, rest: 40, reps: "45 שניות" }, level3: { sets: 4, work: 60, rest: 30, reps: "דקה שלמה" }, level4: { sets: 4, work: 75, rest: 30, reps: "דקה ורבע" }, level5: { sets: 5, work: 90, rest: 20, reps: "דקה וחצי" } }
+        ]},
+        2: { title: "יום שני: מנוחה והתאוששות", exercises: [{ name: "יום מנוחה פעילה (הליכה קלה)", isRestDay: true }] },
+        3: { title: "יום שלישי: רגליים וליבה", exercises: [
+            { name: "סקוואטים משקל גוף", level1: { sets: 3, work: 40, rest: 60, reps: "12 חזרות" }, level2: { sets: 3, work: 45, rest: 50, reps: "15 חזרות" }, level3: { sets: 4, work: 50, rest: 45, reps: "18 חזרות" }, level4: { sets: 4, work: 60, rest: 40, reps: "22 חזרות" }, level5: { sets: 5, work: 70, rest: 30, reps: "25 חזרות" } },
+            { name: "לאנג'ים (כרע)", level1: { sets: 3, work: 35, rest: 60, reps: "10 לכל רגל" }, level2: { sets: 3, work: 40, rest: 50, reps: "12 לכל רגל" }, level3: { sets: 4, work: 45, rest: 45, reps: "15 לכל רגל" }, level4: { sets: 4, work: 50, rest: 40, reps: "18 לכל רגל" }, level5: { sets: 5, work: 60, rest: 30, reps: "20 לכל רגל" } }
+        ]},
+        4: { title: "יום רביעי: אירובי ושריפת שומן", exercises: [
+            { name: "הליכון / ריצה קלה", level1: { sets: 1, work: 1200, rest: 0, reps: "20 דקות הליכה בקצב טוב" }, level2: { sets: 1, work: 1500, rest: 0, reps: "25 דקות הליכה מהירה" }, level3: { sets: 1, work: 1800, rest: 0, reps: "30 דקות משולב ריצה קלה" }, level4: { sets: 1, work: 2100, rest: 0, reps: "35 דקות ריצה קצבית" }, level5: { sets: 1, work: 2700, rest: 0, reps: "45 דקות ריצה מאומצת" } }
+        ]},
+        5: { title: "יום חמישי: פלג גוף עליון מתקדם", exercises: [
+            { name: "שכיבות סמיכה יהלום", level1: { sets: 3, work: 30, rest: 60, reps: "8 חזרות" }, level2: { sets: 3, work: 35, rest: 50, reps: "10 חזרות" }, level3: { sets: 4, work: 40, rest: 45, reps: "12 חזרות" }, level4: { sets: 4, work: 45, rest: 40, reps: "15 חזרות" }, level5: { sets: 5, work: 50, rest: 30, reps: "18 חזרות" } }
+        ]},
+        6: { title: "יום שישי: אתגר אירובי", exercises: [
+            { name: "הליכון בהדרגה", level1: { sets: 1, work: 1500, rest: 0, reps: "25 דקות הליכה" }, level2: { sets: 1, work: 1800, rest: 0, reps: "30 דקות הליכה" }, level3: { sets: 1, work: 2100, rest: 0, reps: "35 דקות הליכה" }, level4: { sets: 1, work: 2400, rest: 0, reps: "40 דקות הליכה" }, level5: { sets: 1, work: 3000, rest: 0, reps: "50 דקות הליכה" } }
+        ]},
+        7: { title: "יום שבת: מנוחה מלאה", exercises: [{ name: "יום מנוחה", isRestDay: true }] }
+    };
+
+    function loadWorkout() {
+        const day = document.getElementById('day-select').value;
+        const data = rawWorkouts[day];
+        const container = document.getElementById('workout-list');
+        let html = `<h3 style="margin-top:15px; font-size:16px;">${data.title}</h3>`;
+        data.exercises.forEach(ex => {
+            if (ex.isRestDay) {
+                html += `<div class="exercise-item"><span style="font-weight:bold; width:100%; text-align:center;">🧘‍♂️ ${ex.name}</span></div>`;
+            } else {
+                const lvl = ex[currentLevel] || ex.level1;
+                html += `<div class="exercise-item"><span><b>${ex.name}</b></span><span style="color:var(--primary); font-weight:bold;">${lvl.sets} סטים • ${lvl.reps}</span></div>`;
+            }
+        });
+        container.innerHTML = html;
     }
 
     function showScreen(screenId) {
@@ -453,6 +528,10 @@
         });
         document.getElementById(screenId).classList.remove('hidden');
         if (screenId === 'sam-screen') loadChatHistory();
+        if (screenId === 'workout-screen') {
+            document.getElementById('workout-level-select').value = currentLevel;
+            loadWorkout();
+        }
     }
 
     loadChatHistory();
