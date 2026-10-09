@@ -113,11 +113,14 @@
             transition: background 0.2s;
             display: block;
             text-align: center;
+            text-decoration: none;
         }
 
         .btn:hover { background-color: var(--primary-hover); }
         .btn-secondary { background-color: #6b7280; }
         .btn-accent { background-color: var(--accent); width: 100%; padding: 14px 20px; font-size: 16px; }
+        .btn-whatsapp { background-color: #25d366; }
+        .btn-whatsapp:hover { background-color: #1ebe5d; }
         .hidden { display: none !important; }
 
         .menu-options {
@@ -127,21 +130,20 @@
             margin-top: 15px;
         }
 
-        input[type="time"], input[type="number"], select {
+        input[type="time"], input[type="number"], input[type="text"], select {
             width: 100% !important;
             max-width: 100% !important;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
-            font-size: 18px;
-            margin: 0 0 12px 0;
-            text-align: center;
+            font-size: 16px;
+            margin: 0 0 10px 0;
+            text-align: right;
             display: block;
             background-color: #f9fafb;
             color: var(--text-color);
             -webkit-appearance: none;
             appearance: none;
-            direction: ltr;
         }
 
         .card {
@@ -151,6 +153,17 @@
             padding: 15px;
             margin-bottom: 12px;
             line-height: 1.6;
+        }
+
+        .reward-row {
+            margin-bottom: 12px;
+        }
+        .reward-label {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--primary);
+            margin-bottom: 4px;
+            display: block;
         }
 
         .exercise-item {
@@ -217,6 +230,7 @@
         <div class="menu-options">
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
+            <button class="btn" onclick="showScreen('rewards-screen')" style="background-color: #f59e0b;">🎁 רשימת פרסים ל-Streak</button>
             <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
         </div>
@@ -261,6 +275,48 @@
 
         <div id="workout-list"></div>
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+    </div>
+
+    <!-- מסך פרסים ובוואטסאפ -->
+    <div id="rewards-screen" class="hidden">
+        <h2>🎁 רשימת פרסים ל-Streak</h2>
+        <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 12px;">
+            הגדר את הפרסים שאתה רוצה לכל תקופה ושלח לאמא בוואטסאפ:
+        </p>
+
+        <div class="card">
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של שבוע:</span>
+                <input type="text" id="rew-1" placeholder="למשל: גלידה מפנקת" oninput="saveRewards()">
+            </div>
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של שבועיים:</span>
+                <input type="text" id="rew-2" placeholder="למשל: ארוחה במסעדה אהובה" oninput="saveRewards()">
+            </div>
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של חודש:</span>
+                <input type="text" id="rew-3" placeholder="למשל: משחק חדש / פריט לבוש" oninput="saveRewards()">
+            </div>
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של שלושה חודשים:</span>
+                <input type="text" id="rew-4" placeholder="למשל: יציאה מיוחדת" oninput="saveRewards()">
+            </div>
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של חצי שנה:</span>
+                <input type="text" id="rew-5" placeholder="למשל: מתנה שווה במיוחד" oninput="saveRewards()">
+            </div>
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של תשעה חודשים:</span>
+                <input type="text" id="rew-6" placeholder="למשל: שדרוג ציוד או בילוי ענק" oninput="saveRewards()">
+            </div>
+            <div class="reward-row">
+                <span class="reward-label">🔥 רצף של שנה שלמה:</span>
+                <input type="text" id="rew-7" placeholder="למשל: חופשה / מתנה גדולה" oninput="saveRewards()">
+            </div>
+        </div>
+
+        <button class="btn btn-whatsapp" onclick="sendWhatsAppToMom()">שלח לאמא בוואטסאפ 💚</button>
+        <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
     <!-- מסך מחשבון BMI -->
@@ -316,6 +372,46 @@
 </div>
 
 <script>
+    // --- REWARDS MANAGEMENT ---
+    function saveRewards() {
+        for (let i = 1; i <= 7; i++) {
+            const val = document.getElementById(`rew-${i}`).value;
+            localStorage.setItem(`reward_${i}`, val);
+        }
+    }
+
+    function loadRewards() {
+        for (let i = 1; i <= 7; i++) {
+            const saved = localStorage.getItem(`reward_${i}`);
+            if (saved) {
+                document.getElementById(`rew-${i}`).value = saved;
+            }
+        }
+    }
+
+    function sendWhatsAppToMom() {
+        saveRewards();
+        const r1 = document.getElementById('rew-1').value || 'לא הוגדר';
+        const r2 = document.getElementById('rew-2').value || 'לא הוגדר';
+        const r3 = document.getElementById('rew-3').value || 'לא הוגדר';
+        const r4 = document.getElementById('rew-4').value || 'לא הוגדר';
+        const r5 = document.getElementById('rew-5').value || 'לא הוגדר';
+        const r6 = document.getElementById('rew-6').value || 'לא הוגדר';
+        const r7 = document.getElementById('rew-7').value || 'לא הוגדר';
+
+        const message = `היי אמא! הגעתי ליעד רצף של שבוע באפליקציית הכושר "מאמן אישי" והנה רשימת פרסים שהייתי רוצה ואת יכולה לבחור אחד:\n\n` +
+            `🔥 שבוע: ${r1}\n` +
+            `🔥 שבועיים: ${r2}\n` +
+            `🔥 חודש: ${r3}\n` +
+            `🔥 3 חודשים: ${r4}\n` +
+            `🔥 חצי שנה: ${r5}\n` +
+            `🔥 9 חודשים: ${r6}\n` +
+            `🔥 שנה שלמה: ${r7}`;
+
+        const encoded = encodeURIComponent(message);
+        window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+    }
+
     // --- STREAK MANAGEMENT ---
     function checkAndUpdateStreak() {
         const lastActive = localStorage.getItem('last_active_date');
@@ -675,11 +771,13 @@
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('meal-screen').classList.add('hidden');
         document.getElementById('workout-screen').classList.add('hidden');
+        document.getElementById('rewards-screen').classList.add('hidden');
         document.getElementById('bmi-screen').classList.add('hidden');
         document.getElementById('notif-screen').classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
 
         if(screenId === 'workout-screen') loadWorkout();
+        if(screenId === 'rewards-screen') loadRewards();
     }
 
     function calculateMeal() {
@@ -844,6 +942,7 @@
     }
 
     // INIT
+    loadRewards();
     initLevelSelector();
     checkAndUpdateStreak();
     scheduleNotificationCheck();
