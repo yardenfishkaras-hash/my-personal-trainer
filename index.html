@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
     <!-- אייקון האפליקציה למסך הבית באייפון -->
-    <link rel="apple-touch-icon" href=“icon.png?v=2">
+    <link rel="apple-touch-icon" href="icon.png?v=2">
     
     <style>
         :root {
@@ -128,7 +128,7 @@
         }
 
         /* תיקון מקיף לשדות קלט ב-iOS Safari */
-        input[type="time"], select {
+        input[type="time"], input[type="number"], select {
             width: 100% !important;
             max-width: 100% !important;
             padding: 12px;
@@ -142,7 +142,7 @@
             color: var(--text-color);
             -webkit-appearance: none;
             appearance: none;
-            direction: ltr; /* יישור מספרים ומציג שעה תקינה */
+            direction: ltr; /* יישור מספרים */
         }
 
         .card {
@@ -218,6 +218,7 @@
         <div class="menu-options">
             <button class="btn" onclick="showScreen('meal-screen')">🍎 תפריט תזונה מורחב</button>
             <button class="btn" onclick="showScreen('workout-screen')">💪 אימון יומי</button>
+            <button class="btn" onclick="showScreen('bmi-screen')" style="background-color: #8b5cf6;">⚖️ מחשבון BMI</button>
             <button class="btn btn-secondary" onclick="showScreen('notif-screen')">🔔 הגדרת התראה יומית</button>
         </div>
     </div>
@@ -260,6 +261,35 @@
         </select>
 
         <div id="workout-list"></div>
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
+    </div>
+
+    <!-- מסך מחשבון BMI מורחב -->
+    <div id="bmi-screen" class="hidden">
+        <h2>מחשבון BMI ⚖️</h2>
+        <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
+            הכנס את הפרמטרים שלך לקבלת מדד מותאם אישית:
+        </p>
+
+        <label for="bmi-gender" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">מגדר:</label>
+        <select id="bmi-gender" style="direction: rtl;">
+            <option value="male" selected>בן 👦</option>
+            <option value="female">בת 👧</option>
+        </select>
+
+        <label for="bmi-age" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">גיל:</label>
+        <input type="number" id="bmi-age" placeholder="למשל: 14" min="5" max="120">
+        
+        <label for="bmi-weight" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">משקל (בק"ג):</label>
+        <input type="number" id="bmi-weight" placeholder="למשל: 55" step="0.1">
+
+        <label for="bmi-height" style="display:block; text-align:center; margin-bottom:4px; font-weight:bold;">גובה (בס"מ):</label>
+        <input type="number" id="bmi-height" placeholder="למשל: 165">
+
+        <button class="btn" style="background-color: #8b5cf6;" onclick="calculateBMI()">חשב BMI</button>
+
+        <div id="bmi-result" class="card hidden" style="text-align: center;"></div>
+
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
@@ -331,12 +361,64 @@
         loadWorkout();
     }
 
+    // --- ADVANCED BMI CALCULATOR ---
+    function calculateBMI() {
+        const weight = parseFloat(document.getElementById('bmi-weight').value);
+        const heightCm = parseFloat(document.getElementById('bmi-height').value);
+        const age = parseInt(document.getElementById('bmi-age').value, 10);
+        const gender = document.getElementById('bmi-gender').value;
+        const resultDiv = document.getElementById('bmi-result');
+
+        if (!weight || !heightCm || !age || heightCm <= 0 || weight <= 0 || age <= 0) {
+            alert("אנא הזן את כל הפרמטרים (גיל, משקל וגובה) בצורה תקינה!");
+            return;
+        }
+
+        const heightM = heightCm / 100;
+        const bmi = (weight / (heightM * heightM)).toFixed(1);
+
+        let category = "";
+        let color = "";
+        let advice = "";
+
+        // התאמת טווחים לפי גיל בוגר מול נערים/ילדים
+        const isYouth = age < 18;
+
+        if (bmi < (isYouth ? 17.5 : 18.5)) {
+            category = "תת-משקל 🔵";
+            color = "#3b82f6";
+            advice = "כדאי להעשיר את התפריט היומי במזונות עשירי חלבון ופחמימות כדי לתמוך בצמיחה ובבניית מסת שריר.";
+        } else if (bmi >= (isYouth ? 17.5 : 18.5) && bmi < (isYouth ? 24 : 25)) {
+            category = "משקל תקין 🟢";
+            color = "#10b981";
+            advice = "מצויין! ה-BMI שלך בטווח התקין והבריא. תמשיך להתמיד באימונים ובתזונה המאוזנת!";
+        } else if (bmi >= (isYouth ? 24 : 25) && bmi < (isYouth ? 28 : 30)) {
+            category = "עודף משקל קל 🟡";
+            color = "#f59e0b";
+            advice = "שמירה על ה-Streak באימונים היומיים והקפדה על שתיית מים וארוחות מסודרות יעזרו לך להגיע לאיזון מושלם.";
+        } else {
+            category = "עודף משקל משמעותי 🔴";
+            color = "#ef4444";
+            advice = "מומלץ לשלב את אימוני האירובי וההליכון באפליקציה יחד עם תפריט התזונה המאוזן לרדת בהדרגה ובבטחה.";
+        }
+
+        const genderText = gender === 'male' ? 'בן' : 'בת';
+
+        resultDiv.innerHTML = `
+            <div style="font-size: 13px; color: var(--subtext); margin-bottom: 4px;">פרופיל: ${genderText}, גיל ${age}</div>
+            <div style="font-size: 14px; color: var(--subtext);">תוצאת ה-BMI שלך:</div>
+            <div style="font-size: 42px; font-weight: bold; color: ${color}; margin: 5px 0;">${bmi}</div>
+            <div style="font-size: 18px; font-weight: bold; color: ${color}; margin-bottom: 10px;">${category}</div>
+            <p style="font-size: 14px; margin: 0; text-align: right; line-height: 1.5;">${advice}</p>
+        `;
+        resultDiv.classList.remove('hidden');
+    }
+
     // --- REMINDERS & NOTIFICATIONS ---
-    let isTestingNotif = false; // מדד שמבדיל בין בדיקה להתראה אמיתית
+    let isTestingNotif = false;
 
     function dismissReminder() {
         document.getElementById('reminder-alert-box').classList.add('hidden');
-        // נרשום שהתראה אמיתית טופלה להיום רק אם זו לא היתה בדיקה בלבד
         if (!isTestingNotif) {
             localStorage.setItem('last_notif_sent', new Date().toDateString());
         }
@@ -362,7 +444,7 @@
 
     function testNotification() {
         playBeep(880, 0.6);
-        isTestingNotif = true; // מסמן שזאת רק בדיקה ולא התראת אמת
+        isTestingNotif = true;
         
         document.getElementById('reminder-alert-text').innerText = "🧪 בדיקת התראה: המערכת עובדת מצוין!";
         document.getElementById('reminder-alert-box').classList.remove('hidden');
@@ -381,7 +463,6 @@
             const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             const lastNotif = localStorage.getItem('last_notif_sent');
 
-            // התראת אמת: מופיעה בשעה שהוגדרה, אם עדיין לא הופיעה היום
             if (currentTime === savedTime && lastNotif !== now.toDateString()) {
                 isTestingNotif = false;
                 playBeep(880, 0.8);
@@ -597,6 +678,7 @@
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('meal-screen').classList.add('hidden');
         document.getElementById('workout-screen').classList.add('hidden');
+        document.getElementById('bmi-screen').classList.add('hidden');
         document.getElementById('notif-screen').classList.add('hidden');
         document.getElementById(screenId).classList.remove('hidden');
 
