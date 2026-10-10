@@ -484,7 +484,7 @@
             }
         } catch (error) {
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
-            appendChatMsg('שגיאה בחיבור: ' + error.message, 'sam');
+            appendChatMsg('שגיאה בחיבור לשרת של סאם.', 'sam');
         }
     }
 
@@ -509,9 +509,9 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // דחיסה משופרת ל-600 פיקסלים כדי למנוע עומס
-                    const maxWidth = 600;
-                    const maxHeight = 600;
+                    // דחיסה מקסימלית לגודל 500 פיקסלים כדי למנוע חריגה בשרת
+                    const maxWidth = 500;
+                    const maxHeight = 500;
                     let width = img.width;
                     let height = img.height;
 
@@ -531,7 +531,8 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    // יצירת Base64 קטן ונקי
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
 
                     appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
 
@@ -552,9 +553,7 @@
                         })
                     })
                     .then(res => {
-                        if (!res.ok) {
-                            return res.text().then(text => { throw new Error("קוד " + res.status + ": " + text); });
-                        }
+                        if (!res.ok) throw new Error("HTTP error " + res.status);
                         return res.json();
                     })
                     .then(data => {
@@ -570,7 +569,7 @@
                         console.error("Error sending image:", err);
                         const loader = document.getElementById('loading-sam');
                         if (loader) loader.remove();
-                        appendChatMsg('שגיאה בחיבור: ' + err.message, 'sam');
+                        appendChatMsg('שגיאה בחיבור לשרת לצורך ניתוח התמונה.', 'sam');
                     });
                 };
                 img.src = e.target.result;
