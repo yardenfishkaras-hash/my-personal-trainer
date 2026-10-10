@@ -493,6 +493,13 @@
                 customMeals[slot].push(action.item);
                 localStorage.setItem('custom_meals', JSON.stringify(customMeals));
             }
+
+            // אם הארוחה הייתה מנוקה בעבר, נסיר את סימן ה-ALL כדי לאפשר הצגת פריטים חדשים
+            let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
+            if (hiddenDefaults[slot]) {
+                hiddenDefaults[slot] = hiddenDefaults[slot].filter(i => i !== "ALL");
+                localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
+            }
         }
         // הסרת מנה מתפריט התזונה
         else if (action.type === "REMOVE_MEAL_ITEM" && action.item) {
@@ -877,9 +884,11 @@
             };
         }
 
+        let isCleared = false;
         if (hiddenDefaults[slotName]) {
             if (hiddenDefaults[slotName].includes("ALL")) {
-                baseMeal.content = "הארוחה נוקתה.";
+                isCleared = true;
+                baseMeal.content = "";
             } else {
                 hiddenDefaults[slotName].forEach(item => {
                     const regExp = new RegExp(`/?\\s*${item}`, 'gi');
@@ -893,17 +902,17 @@
         if (customMeals['כללי']) itemsForThisSlot = itemsForThisSlot.concat(customMeals['כללי']);
 
         let hiddenList = hiddenDefaults[slotName] || [];
-        const filteredCustom = itemsForThisSlot.filter(i => !hiddenList.some(rem => i.includes(rem)));
+        const filteredCustom = itemsForThisSlot.filter(i => !hiddenList.some(rem => rem !== "ALL" && i.includes(rem)));
         
         if (filteredCustom.length > 0) {
-            if (baseMeal.content === "הארוחה נוקתה.") {
-                baseMeal.content = "";
-            } else {
+            if (!isCleared && baseMeal.content.length > 0) {
                 baseMeal.content += "<br>";
             }
             filteredCustom.forEach(item => {
-                baseMeal.content += `<br>• ${item}`;
+                baseMeal.content += `${baseMeal.content.length > 0 ? '<br>' : ''}• ${item}`;
             });
+        } else if (isCleared) {
+            baseMeal.content = "הארוחה נוקתה.";
         }
 
         return baseMeal;
