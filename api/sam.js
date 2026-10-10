@@ -20,22 +20,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const { messages } = req.body;
     const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: "מפתח ה-API של Groq אינו מוגדר בשרת" });
     }
 
-    const messages = [
-      {
-        role: "system",
-        content: "אתה סאם, מאמן אישי חכם, ידידותי ותומך בעברית. אתה עוזר למשתמש בכושר, תזונה וניהול ה-Streak שלו."
-      },
-      {
-        role: "user",
-        content: message || "היי סאם"
-      }
+    // הגדרת הוראת בסיס ברורה וברורה לסאם
+    const systemInstruction = {
+      role: "system",
+      content: "אתה סאם, מאמן אישי חכם, ברור, ממוקד ועוזר בעברית. ענה תמיד לעניין, בצורה הגיונית, עקבית וקשורה ישירות להקשר השיחה ולשאלות המשתמש."
+    };
+
+    // הרכבת כל היסטוריית השיחה
+    const fullConversation = [
+      systemInstruction,
+      ...(Array.isArray(messages) ? messages : [])
     ];
 
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -46,9 +47,9 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "openai/gpt-oss-20b",
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000
+        messages: fullConversation,
+        temperature: 0.5, // מוריד תשובות הזויות ומעלה עקביות
+        max_tokens: 800
       })
     });
 
