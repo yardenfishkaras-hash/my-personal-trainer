@@ -1,9 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '10mb', // הגדלת המגבלת גודל בקשה
+      sizeLimit: '10mb',
     },
   },
 };
@@ -23,27 +21,66 @@ export default async function handler(req, res) {
 
   try {
     const { message, image } = req.body;
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const apiKey = process.env.GROQ_API_KEY;
 
-    let promptParts = [];
+    if (!apiKey) {
+      return res.status(500).json({ error: "מפתח ה-API של Groq אינו מוגדר בשרת" });
+    }
+
+    let messages = [
+      {
+        role: "system",
+        content: "אתה סאם, מאמן אישי חכם, ידידותי ותומך בעברית. אתה עוזר למשתמש בכושר, תזונה וניהול ה-Streak שלו."
+      }
+    ];
 
     if (image) {
-      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-      promptParts.push({
-        inlineData: {
-          data: base64Data,
-          mimeType: "image/jpeg",
-        },
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית."
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: image
+            }
+          }
+        ]
+      });
+    } else {
+      messages.push({
+        role: "user",
+        content: message
       });
     }
 
-    promptParts.push(message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית.");
+    // שימוש במודל ה-Vision של Groq
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.2-11b-vision-preview",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
 
-    const result = await model.generateContent(promptParts);
-    const responseText = result.response.text();
+    const data = await groqResponse.json();
 
-    return res.status(200).json({ reply: responseText });
+    if (!groqResponse.ok) {
+      throw new Error(data.error?.message || "שגיאה בפנייה לשרת של Groq");
+    }
+
+    const replyText = data.choices[0].message.content;
+    return res.status(200).json({ reply: replyText });
+
   } catch (error) {
     console.error("SAM API Error:", error);
     return res.status(500).json({ error: "שגיאה פנימית בשרת", details: error.message });
