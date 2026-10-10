@@ -260,7 +260,7 @@
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
-            המוח החכם שלך: מחובר ל-AI ומנהל עבורך את הרמות, התזונה וההתראות!
+            המוח החכם שלך: מחובר ל-AI ומנהל עבורך את הרמות, התזונה והאימונים!
         </p>
 
         <div id="chat-box" class="chat-container"></div>
@@ -409,7 +409,7 @@
         if (savedHistory) {
             box.innerHTML = savedHistory;
         } else {
-            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני יכול לעזור לך באימונים, להעלות/להוריד רמה, לקבוע התראות ולעדכן תפריטים!</div>`;
+            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני יכול לעזור לך באימונים, להזיז ימי אימון, להוסיף תרגילים ולעדכן תפריטים!</div>`;
         }
         box.scrollTop = box.scrollHeight;
     }
@@ -426,7 +426,7 @@
         }
     }
 
-    // טיפול בפעולות מסאם
+    // ניהול פעולות מותאמות אישית מסאם
     function handleSamAction(action) {
         if (!action || !action.type) return;
 
@@ -467,10 +467,43 @@
             customMeals[slot] = [];
             localStorage.setItem('custom_meals', JSON.stringify(customMeals));
 
-            // נקה גם את ברירת המחדל המקורית של אותה ארוחה כדי שהיא תתרוקן לגמרי
             let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
             hiddenDefaults[slot] = ["ALL"];
             localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
+        }
+        else if (action.type === "SWAP_REST_DAY" && action.restDay) {
+            let scheduleChanges = JSON.parse(localStorage.getItem('custom_workout_schedule') || '{}');
+            scheduleChanges[action.restDay] = { title: "יום מנוחה", exercises: [{ name: "מנוחה", isRestDay: true }] };
+            if (action.newSchedule) {
+                Object.assign(scheduleChanges, action.newSchedule);
+            }
+            localStorage.setItem('custom_workout_schedule', JSON.stringify(scheduleChanges));
+            loadWorkout();
+        }
+        else if (action.type === "ADD_EXERCISE" && action.exercise) {
+            let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
+            let day = action.day || document.getElementById('day-select').value;
+            if (!customEx[day]) customEx[day] = [];
+            customEx[day].push(action.exercise);
+            localStorage.setItem('added_exercises', JSON.stringify(customEx));
+            loadWorkout();
+        }
+        else if (action.type === "REMOVE_EXERCISE" && action.exerciseName) {
+            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
+            let day = action.day || document.getElementById('day-select').value;
+            if (!removedEx[day]) removedEx[day] = [];
+            removedEx[day].push(action.exerciseName);
+            localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
+            loadWorkout();
+        }
+        else if (action.type === "RESTORE_EXERCISE" && action.exerciseName) {
+            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
+            let day = action.day || document.getElementById('day-select').value;
+            if (removedEx[day]) {
+                removedEx[day] = removedEx[day].filter(name => name !== action.exerciseName);
+                localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
+            }
+            loadWorkout();
         }
     }
 
@@ -504,7 +537,7 @@
             });
         });
 
-        const recentHistory = conversationHistory.slice(-10);
+        const recentHistory = conversationHistory.slice(-12);
 
         try {
             const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
@@ -785,7 +818,6 @@
             };
         }
 
-        // בדיקה האם הארוחה נוקתה לחלוטין או הוסרו רכיבים מתוכה
         if (hiddenDefaults[slotName]) {
             if (hiddenDefaults[slotName].includes("ALL")) {
                 baseMeal.content = "הארוחה נוקתה.";
@@ -797,7 +829,6 @@
             }
         }
 
-        // הצגת התוספות שסאם הוסיף
         let itemsForThisSlot = [];
         if (customMeals[slotName]) itemsForThisSlot = itemsForThisSlot.concat(customMeals[slotName]);
         if (customMeals['כללי']) itemsForThisSlot = itemsForThisSlot.concat(customMeals['כללי']);
@@ -999,29 +1030,54 @@
 
     function loadWorkout() {
         const day = document.getElementById('day-select').value;
-        const data = rawWorkouts[day];
+        let scheduleChanges = JSON.parse(localStorage.getItem('custom_workout_schedule') || '{}');
+        let data = scheduleChanges[day] || rawWorkouts[day];
+        
+        let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}')[day] || [];
+        let addedEx = JSON.parse(localStorage.getItem('added_exercises') || '{}')[day] || [];
+
         const container = document.getElementById('workout-list');
         
         let html = `<h3 style="margin-top:15px;">${data.title}</h3>`;
-        data.exercises.forEach((ex, idx) => {
+        
+        let exercisesToDisplay = [...data.exercises];
+        
+        // סינון תרגילים שהוסרו
+        exercisesToDisplay = exercisesToDisplay.filter(ex => !removedEx.includes(ex.name));
+
+        // הוספת תרגילים חדשים שסאם הוסיף
+        addedEx.forEach(ex => {
+            let lvlObj = {};
+            lvlObj[currentLevel] = { sets: ex.sets || 3, work: ex.work || 40, rest: ex.rest || 45, reps: ex.reps || "12 חזרות" };
+            exercisesToDisplay.push({
+                name: ex.name,
+                level1: lvlObj.level1 || lvlObj[currentLevel],
+                level2: lvlObj.level2 || lvlObj[currentLevel],
+                level3: lvlObj.level3 || lvlObj[currentLevel],
+                level4: lvlObj.level4 || lvlObj[currentLevel],
+                level5: lvlObj.level5 || lvlObj[currentLevel]
+            });
+        });
+
+        exercisesToDisplay.forEach((ex, idx) => {
             if (ex.isRestDay) {
                 html += `
                     <div class="exercise-item">
                         <div class="exercise-info">
                             <span class="exercise-title">${ex.name}</span>
-                            <span class="exercise-sub">ה-Streak שלך נשמר אוטומטית!</span>
+                            <span class="exercise-sub">יום מנוחה! ה-Streak שלך נשמר אוטומטית ☕</span>
                         </div>
                     </div>
                 `;
             } else {
-                const lvlData = ex[currentLevel];
+                const lvlData = ex[currentLevel] || ex.level1;
                 html += `
                     <div class="exercise-item">
                         <div class="exercise-info">
                             <span class="exercise-title">${ex.name}</span>
                             <span class="exercise-sub">${lvlData.sets} סטים x ${lvlData.reps}</span>
                         </div>
-                        <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startWorkoutRoutine(${day}, ${idx})">התחל</button>
+                        <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startCustomWorkoutRoutine('${ex.name}', ${lvlData.sets}, ${lvlData.work}, ${lvlData.rest})">התחל</button>
                     </div>
                 `;
             }
@@ -1035,18 +1091,15 @@
     let workSec = 30;
     let restSec = 60;
 
-    function startWorkoutRoutine(day, exIndex) {
+    function startCustomWorkoutRoutine(name, sets, work, rest) {
         dismissReminder();
-        const rawEx = rawWorkouts[day].exercises[exIndex];
-        const lvlData = rawEx[currentLevel];
-
         currentSet = 1;
-        totalSets = lvlData.sets;
-        workSec = lvlData.work;
-        restSec = lvlData.rest;
+        totalSets = sets;
+        workSec = work;
+        restSec = rest;
 
         document.getElementById('timer-modal').classList.remove('hidden');
-        document.getElementById('timer-title').innerText = rawEx.name;
+        document.getElementById('timer-title').innerText = name;
         startPrepPhase();
     }
 
