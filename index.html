@@ -426,47 +426,57 @@
         }
     }
 
-    // פונקציה חכמה ומדויקת להעברת תרגילים ושמירה מלאה על כל דרגות הקושי והתרגילים
-    function restructureWeeklySchedule(targetRestDay) {
-        let samWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || 'null');
-        if (!samWeekly) {
-            samWeekly = JSON.parse(JSON.stringify(rawWorkouts));
+    // הגדרה דינמית של ימי המנוחה ושמירה על ה-Streak
+    function updateDynamicRestDays(restDaysArray) {
+        let restDays = restDaysArray.map(Number);
+        
+        if (restDays.length === 1) {
+            let secondRest = restDays[0] === 6 ? 7 : restDays[0] + 1;
+            if (secondRest > 7) secondRest = 1;
+            restDays.push(secondRest);
         }
 
-        let restDayNum = parseInt(targetRestDay, 10);
+        // שמירת ימי המנוחה שנבחרו ב-localStorage
+        localStorage.setItem('user_rest_days', JSON.stringify(restDays));
 
-        // שומרים את כל התרגילים המלאים של היום שהופך למנוחה
-        let exToTransfer = [];
-        if (samWeekly[restDayNum] && samWeekly[restDayNum].exercises) {
-            exToTransfer = samWeekly[restDayNum].exercises.filter(ex => !ex.isRestDay);
+        const standardWorkouts = [
+            rawWorkouts[1], // כוח + הליכון
+            rawWorkouts[3], // כוח גוף מלא
+            rawWorkouts[4], // אירובי + בטן
+            rawWorkouts[5], // כוח גוף מלא
+            rawWorkouts[6]  // הליכון בשיפוע
+        ];
+
+        let updatedWeekly = {};
+        let workoutIndex = 0;
+
+        for (let day = 1; day <= 7; day++) {
+            if (restDays.includes(day)) {
+                updatedWeekly[day] = {
+                    title: "יום מנוחה מותאם אישית",
+                    exercises: [{ name: "מנוחה מלאה", isRestDay: true }]
+                };
+            } else {
+                let workoutToAssign = standardWorkouts[workoutIndex % standardWorkouts.length];
+                updatedWeekly[day] = JSON.parse(JSON.stringify(workoutToAssign));
+                workoutIndex++;
+            }
         }
 
-        // הופכים את היום המבוקש ליום מנוחה
-        samWeekly[restDayNum] = {
-            title: "יום מנוחה מותאם אישית",
-            exercises: [{ name: "מנוחה מלאה", isRestDay: true }]
-        };
-
-        // אם היו תרגילים ביום הזה, מעבירים אותם ליום שני (יום 2) שהוא יום מנוחה במקור
-        if (exToTransfer.length > 0) {
-            let targetDayNum = 2; // יום שני
-            if (restDayNum === 2) targetDayNum = 1; // מקרה קצה - אם בחרו את יום שני
-
-            samWeekly[targetDayNum] = {
-                title: "אימון כוח (הועבר מיום חמישי)",
-                exercises: exToTransfer
-            };
-        }
-
-        localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samWeekly));
+        localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(updatedWeekly));
         loadWorkout();
     }
 
-    // ניהול פעולות מותאמות אישית מסאם
     function handleSamAction(action) {
         if (!action || !action.type) return;
 
-        if (action.type === "SET_LEVEL" && action.value) {
+        if (action.type === "SET_REST_DAYS" && action.restDays) {
+            updateDynamicRestDays(action.restDays);
+        }
+        else if (action.type === "SWAP_REST_DAY" && action.targetDay) {
+            updateDynamicRestDays([action.targetDay]);
+        }
+        else if (action.type === "SET_LEVEL" && action.value) {
             changeFitnessLevel(action.value);
             initLevelSelector();
         } 
@@ -506,9 +516,6 @@
             let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
             hiddenDefaults[slot] = ["ALL"];
             localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
-        }
-        else if (action.type === "SWAP_REST_DAY" && action.targetDay) {
-            restructureWeeklySchedule(action.targetDay);
         }
         else if (action.type === "ADD_EXERCISE" && action.exercise) {
             let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
@@ -685,18 +692,36 @@
         }
     }
 
+    // בודק ומעדכן את ה-Streak תוך התחשבות בימי המנוחה המותאמים אישית
     function checkAndUpdateStreak() {
         const lastActive = localStorage.getItem('last_active_date');
         let streak = parseInt(localStorage.getItem('user_streak') || '0', 10);
+        let userRestDays = JSON.parse(localStorage.getItem('user_rest_days') || '[2, 7]');
 
         if (lastActive) {
             const lastDate = new Date(lastActive);
             const today = new Date();
             const diffDays = Math.ceil(Math.abs(today - lastDate) / (1000 * 60 * 60 * 24));
 
-            if (diffDays > 2) {
-                streak = 0;
-                localStorage.setItem('user_streak', '0');
+            // אם עבר יותר מיום, בודקים אם הימים שבאמצע היו ימי מנוחה מוגדרים
+            if (diffDays > 1) {
+                let currentCheck = new Date(lastDate);
+                currentCheck.setDate(currentCheck.getDate() + 1);
+                let missedWorkout = false;
+
+                while (currentCheck < today) {
+                    let dayOfWeek = currentCheck.getDay() + 1; // 1=ראשון, 7=שבת
+                    if (!userRestDays.includes(dayOfWeek)) {
+                        missedWorkout = true;
+                        break;
+                    }
+                    currentCheck.setDate(currentCheck.getDate() + 1);
+                }
+
+                if (missedWorkout) {
+                    streak = 0;
+                    localStorage.setItem('user_streak', '0');
+                }
             }
         }
         document.getElementById('streak-display').innerText = `${streak} ימים`;
