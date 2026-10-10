@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>המאמן האישי</title>
     
+    <!-- הגדרות להתאמה מלאה לאייפון (iOS PWA) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
+    
+    <!-- אייקון האפליקציה למסך הבית באייפון -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
     
     <style>
@@ -25,7 +28,9 @@
             --sam-color: #7c3aed;
         }
 
-        * { box-sizing: border-box !important; }
+        * {
+            box-sizing: border-box !important;
+        }
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -187,7 +192,10 @@
             text-align: right;
         }
 
-        .chat-input-box { display: flex; gap: 8px; }
+        .chat-input-box {
+            display: flex;
+            gap: 8px;
+        }
 
         .exercise-item {
             display: flex;
@@ -234,16 +242,19 @@
 <body>
 
 <div class="app-container">
+    <!-- Streak Display -->
     <div class="streak-banner">
         <span>🔥 רצף יומיומי (Streak):</span>
         <span id="streak-display" class="streak-count">0 ימים</span>
     </div>
 
+    <!-- באנר התראת פרס סטריק שמופיע אוטומטית כשמגיעים ליעד -->
     <div id="reminder-alert-box" class="reminder-alert hidden" onclick="sendRewardToMom()">
         <span id="reminder-alert-text">🎉 כל הכבוד! הגעת ליעד רצף מרשים! לחץ כאן לשליחת בקשת פרס לאמא בוואטסאפ 💚</span>
         <div style="font-size: 12px; font-weight: normal; margin-top: 4px; text-decoration: underline;">(לחץ לפתיחת וואטסאפ עם הודעה מוכנה)</div>
     </div>
 
+    <!-- מסך ראשי -->
     <div id="home-screen">
         <h1>המאמן האישי שלי 🏋️‍♂️</h1>
         <p style="text-align: center; color: var(--subtext);">בחר מה ברצונך לבדוק עכשיו:</p>
@@ -257,6 +268,7 @@
         </div>
     </div>
 
+    <!-- מסך סאם (SAM) -->
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
@@ -282,6 +294,7 @@
         </div>
     </div>
 
+    <!-- מסך תפריט -->
     <div id="meal-screen" class="hidden">
         <h2>תפריט תזונה 🥗</h2>
         <label for="time-input" style="display:block; text-align:center; margin-bottom:8px;">מה השעה עכשיו? (פורמט 24 שעות):</label>
@@ -292,6 +305,7 @@
         <button class="btn btn-secondary" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך אימון -->
     <div id="workout-screen" class="hidden">
         <h2>אימון יומי 🏋️</h2>
 
@@ -321,6 +335,7 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך מחשבון קלוריות -->
     <div id="calories-screen" class="hidden">
         <h2>מחשבון קלוריות 🔥</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
@@ -357,6 +372,7 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך מחשבון BMI -->
     <div id="bmi-screen" class="hidden">
         <h2>מחשבון BMI ⚖️</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 14px; margin-bottom: 15px;">
@@ -385,6 +401,7 @@
         <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showScreen('home-screen')">חזרה למסך הראשי</button>
     </div>
 
+    <!-- מסך התראות -->
     <div id="notif-screen" class="hidden">
         <h2>התראה יומית 🔔</h2>
         <p style="text-align: center; color: var(--subtext);">בחר באיזו שעה תרצה לקבל תזכורת להתאמן ולשמור על ה-Streak:</p>
@@ -396,6 +413,7 @@
     </div>
 </div>
 
+<!-- חלון טיימר -->
 <div id="timer-modal" class="timer-modal hidden">
     <div class="timer-content">
         <h3 id="timer-title">תרגיל</h3>
@@ -407,6 +425,7 @@
 </div>
 
 <script>
+    // --- SAM AI CHAT & MEMORY ENGINE ---
     function loadChatHistory() {
         const box = document.getElementById('chat-box');
         const savedHistory = localStorage.getItem('sam_chat_history');
@@ -449,7 +468,9 @@
         try {
             const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ message: text })
             });
 
@@ -488,8 +509,9 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    const maxWidth = 500;
-                    const maxHeight = 500;
+                    // דחיסה אגרסיבית ל-120 פיקסלים ואיכות 0.2 לעמידה במגבלת 8,000 הטוקנים
+                    const maxWidth = 120;
+                    const maxHeight = 120;
                     let width = img.width;
                     let height = img.height;
 
@@ -509,7 +531,7 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.2);
 
                     appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
 
@@ -559,6 +581,7 @@
         }
     }
 
+    // --- CALORIES CALCULATOR (Mifflin-St Jeor Equation) ---
     function calculateCalories() {
         const gender = document.getElementById('cal-gender').value;
         const age = parseInt(document.getElementById('cal-age').value, 10);
@@ -597,6 +620,7 @@
         resultDiv.classList.remove('hidden');
     }
 
+    // --- STREAK REWARD WHATSAPP INTEGRATION ---
     let currentStreakDaysForReward = 1;
 
     function sendRewardToMom() {
@@ -639,6 +663,7 @@
         }
     }
 
+    // --- STREAK MANAGEMENT ---
     function checkAndUpdateStreak() {
         const lastActive = localStorage.getItem('last_active_date');
         let streak = parseInt(localStorage.getItem('user_streak') || '0', 10);
@@ -671,6 +696,7 @@
         }
     }
 
+    // --- FITNESS LEVEL MANAGEMENT ---
     let currentLevel = localStorage.getItem('fitness_level') || 'level1';
 
     function initLevelSelector() {
@@ -683,6 +709,7 @@
         loadWorkout();
     }
 
+    // --- ADVANCED BMI CALCULATOR ---
     function calculateBMI() {
         const weight = parseFloat(document.getElementById('bmi-weight').value);
         const heightCm = parseFloat(document.getElementById('bmi-height').value);
@@ -733,6 +760,9 @@
         resultDiv.classList.remove('hidden');
     }
 
+    // --- REMINDERS & NOTIFICATIONS ---
+    let isTestingNotif = false;
+
     function dismissReminder() {
         document.getElementById('reminder-alert-box').classList.add('hidden');
     }
@@ -754,6 +784,7 @@
         }
     }
 
+    // --- MEAL DATA ---
     function getMealByTime(timeStr) {
         const [hours, minutes] = timeStr.split(':').map(Number);
         const totalMinutes = hours * 60 + minutes;
@@ -791,6 +822,7 @@
         }
     }
 
+    // --- WORKOUT DATA ---
     const rawWorkouts = {
         1: { title: "כוח + הליכון קצר", exercises: [
             { name: "שכיבות סמיכה", 
@@ -946,6 +978,7 @@
         7: { title: "יום מנוחה מוחלטת", exercises: [{ name: "מנוחה", isRestDay: true }] }
     };
 
+    // UI ROUTING
     function showScreen(screenId) {
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('sam-screen').classList.add('hidden');
@@ -1001,6 +1034,7 @@
         container.innerHTML = html;
     }
 
+    // TIMER ENGINE
     let timerInterval = null;
     let currentSet = 1;
     let totalSets = 3;
@@ -1120,6 +1154,7 @@
         } catch(e) {}
     }
 
+    // INIT
     initLevelSelector();
     checkAndUpdateStreak();
     loadChatHistory();
