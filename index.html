@@ -474,9 +474,6 @@
         else if (action.type === "SWAP_REST_DAY" && action.restDay) {
             let scheduleChanges = JSON.parse(localStorage.getItem('custom_workout_schedule') || '{}');
             scheduleChanges[action.restDay] = { title: "יום מנוחה", exercises: [{ name: "מנוחה", isRestDay: true }] };
-            if (action.newSchedule) {
-                Object.assign(scheduleChanges, action.newSchedule);
-            }
             localStorage.setItem('custom_workout_schedule', JSON.stringify(scheduleChanges));
             loadWorkout();
         }
@@ -1031,7 +1028,7 @@
     function loadWorkout() {
         const day = document.getElementById('day-select').value;
         let scheduleChanges = JSON.parse(localStorage.getItem('custom_workout_schedule') || '{}');
-        let data = scheduleChanges[day] || rawWorkouts[day];
+        let data = scheduleChanges[day] || rawWorkouts[day] || rawWorkouts[1];
         
         let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}')[day] || [];
         let addedEx = JSON.parse(localStorage.getItem('added_exercises') || '{}')[day] || [];
@@ -1040,48 +1037,54 @@
         
         let html = `<h3 style="margin-top:15px;">${data.title}</h3>`;
         
-        let exercisesToDisplay = [...data.exercises];
+        let baseExercises = (data.exercises && Array.isArray(data.exercises)) ? data.exercises : [];
+        let exercisesToDisplay = [...baseExercises];
         
-        // סינון תרגילים שהוסרו
-        exercisesToDisplay = exercisesToDisplay.filter(ex => !removedEx.includes(ex.name));
+        exercisesToDisplay = exercisesToDisplay.filter(ex => ex && ex.name && !removedEx.includes(ex.name));
 
-        // הוספת תרגילים חדשים שסאם הוסיף
-        addedEx.forEach(ex => {
-            let lvlObj = {};
-            lvlObj[currentLevel] = { sets: ex.sets || 3, work: ex.work || 40, rest: ex.rest || 45, reps: ex.reps || "12 חזרות" };
-            exercisesToDisplay.push({
-                name: ex.name,
-                level1: lvlObj.level1 || lvlObj[currentLevel],
-                level2: lvlObj.level2 || lvlObj[currentLevel],
-                level3: lvlObj.level3 || lvlObj[currentLevel],
-                level4: lvlObj.level4 || lvlObj[currentLevel],
-                level5: lvlObj.level5 || lvlObj[currentLevel]
+        if (Array.isArray(addedEx)) {
+            addedEx.forEach(ex => {
+                if (!ex || !ex.name) return;
+                let lvlObj = {};
+                lvlObj[currentLevel] = { sets: ex.sets || 3, work: ex.work || 40, rest: ex.rest || 45, reps: ex.reps || "12 חזרות" };
+                exercisesToDisplay.push({
+                    name: ex.name,
+                    level1: lvlObj.level1 || lvlObj[currentLevel],
+                    level2: lvlObj.level2 || lvlObj[currentLevel],
+                    level3: lvlObj.level3 || lvlObj[currentLevel],
+                    level4: lvlObj.level4 || lvlObj[currentLevel],
+                    level5: lvlObj.level5 || lvlObj[currentLevel]
+                });
             });
-        });
+        }
 
-        exercisesToDisplay.forEach((ex, idx) => {
-            if (ex.isRestDay) {
-                html += `
-                    <div class="exercise-item">
-                        <div class="exercise-info">
-                            <span class="exercise-title">${ex.name}</span>
-                            <span class="exercise-sub">יום מנוחה! ה-Streak שלך נשמר אוטומטית ☕</span>
+        if (exercisesToDisplay.length === 0) {
+            html += `<div style="text-align:center; padding:20px; color:var(--subtext);">אין תרגילים מוגדרים ליום זה.</div>`;
+        } else {
+            exercisesToDisplay.forEach((ex) => {
+                if (ex.isRestDay) {
+                    html += `
+                        <div class="exercise-item">
+                            <div class="exercise-info">
+                                <span class="exercise-title">${ex.name}</span>
+                                <span class="exercise-sub">יום מנוחה! ה-Streak שלך נשמר אוטומטית ☕</span>
+                            </div>
                         </div>
-                    </div>
-                `;
-            } else {
-                const lvlData = ex[currentLevel] || ex.level1;
-                html += `
-                    <div class="exercise-item">
-                        <div class="exercise-info">
-                            <span class="exercise-title">${ex.name}</span>
-                            <span class="exercise-sub">${lvlData.sets} סטים x ${lvlData.reps}</span>
+                    `;
+                } else {
+                    const lvlData = ex[currentLevel] || ex.level1 || { sets: 3, work: 30, rest: 45, reps: "10 חזרות" };
+                    html += `
+                        <div class="exercise-item">
+                            <div class="exercise-info">
+                                <span class="exercise-title">${ex.name}</span>
+                                <span class="exercise-sub">${lvlData.sets} סטים x ${lvlData.reps}</span>
+                            </div>
+                            <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startCustomWorkoutRoutine('${ex.name}', ${lvlData.sets}, ${lvlData.work}, ${lvlData.rest})">התחל</button>
                         </div>
-                        <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startCustomWorkoutRoutine('${ex.name}', ${lvlData.sets}, ${lvlData.work}, ${lvlData.rest})">התחל</button>
-                    </div>
-                `;
-            }
-        });
+                    `;
+                }
+            });
+        }
         container.innerHTML = html;
     }
 
@@ -1094,9 +1097,9 @@
     function startCustomWorkoutRoutine(name, sets, work, rest) {
         dismissReminder();
         currentSet = 1;
-        totalSets = sets;
-        workSec = work;
-        restSec = rest;
+        totalSets = sets || 3;
+        workSec = work || 30;
+        restSec = rest || 45;
 
         document.getElementById('timer-modal').classList.remove('hidden');
         document.getElementById('timer-title').innerText = name;
