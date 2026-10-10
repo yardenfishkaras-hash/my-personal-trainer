@@ -452,22 +452,25 @@
             let slot = action.timeSlot || 'עשר';
             
             if (customMeals[slot]) {
-                // סינון כל הרכיבים שכוללים את מילת החיפוש (כמו "כריך")
                 customMeals[slot] = customMeals[slot].filter(i => !i.includes(action.item));
                 localStorage.setItem('custom_meals', JSON.stringify(customMeals));
             }
 
-            let removedItems = JSON.parse(localStorage.getItem('removed_meal_items') || '[]');
-            if (!removedItems.includes(action.item)) {
-                removedItems.push(action.item);
-                localStorage.setItem('removed_meal_items', JSON.stringify(removedItems));
-            }
+            let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
+            if (!hiddenDefaults[slot]) hiddenDefaults[slot] = [];
+            hiddenDefaults[slot].push(action.item);
+            localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
         }
         else if (action.type === "CLEAR_MEAL_SLOT") {
             let slot = action.timeSlot || 'עשר';
             let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
             customMeals[slot] = [];
             localStorage.setItem('custom_meals', JSON.stringify(customMeals));
+
+            // נקה גם את ברירת המחדל המקורית של אותה ארוחה כדי שהיא תתרוקן לגמרי
+            let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
+            hiddenDefaults[slot] = ["ALL"];
+            localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
         }
     }
 
@@ -739,7 +742,7 @@
         const totalMinutes = hours * 60 + minutes;
 
         let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-        let removedItems = JSON.parse(localStorage.getItem('removed_meal_items') || '[]');
+        let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
 
         let baseMeal = {};
         let slotName = "";
@@ -782,19 +785,32 @@
             };
         }
 
-        // הסרת פריטים לפי מילת המפתח שהוגדרה להסרה
-        removedItems.forEach(item => {
-            const regExp = new RegExp(`/?\\s*${item}`, 'gi');
-            baseMeal.content = baseMeal.content.replace(regExp, '');
-        });
+        // בדיקה האם הארוחה נוקתה לחלוטין או הוסרו רכיבים מתוכה
+        if (hiddenDefaults[slotName]) {
+            if (hiddenDefaults[slotName].includes("ALL")) {
+                baseMeal.content = "הארוחה נוקתה.";
+            } else {
+                hiddenDefaults[slotName].forEach(item => {
+                    const regExp = new RegExp(`/?\\s*${item}`, 'gi');
+                    baseMeal.content = baseMeal.content.replace(regExp, '');
+                });
+            }
+        }
 
-        // הוספת פריטים שסאם הוסיף
+        // הצגת התוספות שסאם הוסיף
         let itemsForThisSlot = [];
         if (customMeals[slotName]) itemsForThisSlot = itemsForThisSlot.concat(customMeals[slotName]);
         if (customMeals['כללי']) itemsForThisSlot = itemsForThisSlot.concat(customMeals['כללי']);
 
-        const filteredCustom = itemsForThisSlot.filter(i => !removedItems.some(rem => i.includes(rem)));
+        let hiddenList = hiddenDefaults[slotName] || [];
+        const filteredCustom = itemsForThisSlot.filter(i => !hiddenList.some(rem => i.includes(rem)));
+        
         if (filteredCustom.length > 0) {
+            if (baseMeal.content === "הארוחה נוקתה.") {
+                baseMeal.content = "";
+            } else {
+                baseMeal.content += "<br>";
+            }
             filteredCustom.forEach(item => {
                 baseMeal.content += `<br>• ${item}`;
             });
