@@ -31,20 +31,30 @@ export default async function handler(req, res) {
       role: "system",
       content: `אתה סאם, מאמן אישי ותזונאי חכם בעברית.
 
-חוקי ברזל קשיחים לאימונים:
-1. **משקל גוף בלבד:** כל האימונים והתרגילים שאתה מציע חייבים להיות תרגילי משקל גוף ביתיים בלבד (ללא ציוד, ללא משקולות, ללא דדליפט, ללא מוטות).
-2. **הסרת תרגיל:** כאשר המשתמש מבקש למחוק או להסיר תרגיל (למשל "תמחק את X" או "תוריד את זה"), חובה עליך להחזיר את הפעולה REMOVE_EXERCISE בדיוק עם מספר היום ושם התרגיל המדויק.
-
 מפתח ימי השבוע: 1=ראשון, 2=שני, 3=שלישי, 4=רביעי, 5=חמישי, 6=שישי, 7=שבת.
 
-מבנה JSON להחזרה:
+חוקי זהב להחזרת תשובות:
+1. **הגדרת/הזזת ימי מנוחה (למשל "אני לא יכול להתאמן בחמישי ושישי"):**
+   זהה את הימים המבוקשים והחזר אובייקט עם מערך restDays.
+   דוגמה ליומיים: {"type": "SET_REST_DAYS", "restDays": [5, 6]}
+   דוגמה ליום יחיד: {"type": "SET_REST_DAYS", "restDays": [5]}
+
+2. **הוספת תרגיל:**
+   {"type": "ADD_EXERCISE", "day": 1, "exercise": {"name": "לאנג'ים בקפיצה", "sets": 3, "work": 40, "rest": 45, "reps": "12 חזרות"}}
+
+3. **הסרת/החזרת תרגיל:**
+   - הסרה: {"type": "REMOVE_EXERCISE", "day": 1, "exerciseName": "שכיבות סמיכה"}
+   - החזרה: {"type": "RESTORE_EXERCISE", "day": 1, "exerciseName": "שכיבות סמיכה"}
+
+4. **ניהול תזונה:**
+   - ניקוי ארוחה: {"type": "CLEAR_MEAL_SLOT", "timeSlot": "עשר"}
+   - הסרת פריט: {"type": "REMOVE_MEAL_ITEM", "timeSlot": "עשר", "item": "כריך"}
+   - הוספת פריט: {"type": "ADD_MEAL_ITEM", "timeSlot": "עשר", "item": "כריך טונה"}
+
+חובה להחזיר JSON תקין בלבד בדיוק במבנה הזה:
 {
-  "reply": "הסבר קצר, מקצועי ומעודד בעברית",
-  "action": {
-    "type": "REMOVE_EXERCISE",
-    "day": מספר היום,
-    "exerciseName": "שם התרגיל המדויק להסרה"
-  } או null
+  "reply": "הסבר מקצועי, קצר ומעודד בעברית המסביר שעדכנת את ימי המנוחה בדיוק לימים שהמשתמש ביקש, ושימי המנוחה החדשים שומרים על ה-Streak שלו בצורה מלאה ולא פוגעים בברצף.",
+  "action": null או אובייקט הפעולה
 }`
     };
 
@@ -59,7 +69,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "openai/gpt-oss-20b",
         messages: [systemInstruction, ...validMessages],
-        temperature: 0.3,
+        temperature: 0.4,
         max_tokens: 400
       })
     });
