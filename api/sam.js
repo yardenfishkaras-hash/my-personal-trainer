@@ -27,10 +27,28 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "מפתח ה-API של Groq אינו מוגדר בשרת" });
     }
 
-    // הנחיות מערכת ברורות שמונעות מסאם לחזור על ברכות שלום
     const systemInstruction = {
       role: "system",
-      content: "אתה סאם, מאמן אישי חכם, ברור ועוזר בעברית. ענה תמיד ישירות לשאלות המשתמש בקצרה ובמדויק. אם המשתמש שואל שאלה, ענה עליה מיד ואל תגיד 'שלום, איך אפשר לעזור'."
+      content: `אתה סאם, מאמן אישי חכם בעברית שיש לו גישה מלאה לשליטה באפליקציה של המשתמש.
+
+אתה חייב להחזיר תמיד תשובה בפורמט JSON בלבד בצורה הזו:
+{
+  "reply": "הטקסט שיופיע בצ'אט למשתמש בעברית",
+  "action": null או אובייקט פעולה
+}
+
+סוגי הפעולות (action) שאתה יכול לבצע:
+1. שינוי דרגת קושי באימון (level1 עד level5):
+   {"type": "SET_LEVEL", "value": "level3"}
+2. קביעת שעת התראה יומית (בפורמט HH:MM):
+   {"type": "SET_NOTIFICATION", "time": "17:30"}
+3. הוספת רכיב לתפריט ארוחה:
+   {"type": "ADD_MEAL_ITEM", "timeSlot": "צהריים", "item": "כוס ירקות ירוקים"}
+4. הסרת רכיב מתפריט ארוחה:
+   {"type": "REMOVE_MEAL_ITEM", "timeSlot": "צהריים", "item": "פתיתים"}
+
+אם המשתמש לא ביקש לבצע שינוי באפליקציה, החזר "action": null.
+שים לב: החזר JSON תקין בלבד ללא עטיפת markdown!`
     };
 
     const validMessages = Array.isArray(messages) ? messages : [];
@@ -44,8 +62,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "openai/gpt-oss-20b",
         messages: [systemInstruction, ...validMessages],
-        temperature: 0.3,
-        max_tokens: 500
+        temperature: 0.2,
+        max_tokens: 600
       })
     });
 
@@ -55,8 +73,23 @@ export default async function handler(req, res) {
       throw new Error(data.error?.message || "שגיאה בפנייה לשרת");
     }
 
-    const replyText = data.choices[0].message.content;
-    return res.status(200).json({ reply: replyText });
+    let replyText = data.choices[0].message.content.trim();
+    
+    // ניקוי מחרזות במידה והמודל עוטף ב-markdown
+    if (replyText.startsWith("```json")) {
+      replyText = replyText.replace(/^```json/, "").replace(/```$/, "").trim();
+    } else if (replyText.startsWith("```")) {
+      replyText = replyText.replace(/^```/, "").replace(/```$/, "").trim();
+    }
+
+    let parsedData;
+    try {
+      parsedData = JSON.parse(replyText);
+    } catch (e) {
+      parsedData = { reply: replyText, action: null };
+    }
+
+    return res.status(200).json(parsedData);
 
   } catch (error) {
     console.error("SAM API Error:", error);
