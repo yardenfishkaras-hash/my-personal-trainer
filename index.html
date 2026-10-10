@@ -426,6 +426,7 @@
         }
     }
 
+    // הגדרה דינמית של ימי המנוחה ושמירה על ה-Streak
     function updateDynamicRestDays(restDaysArray) {
         let restDays = restDaysArray.map(Number);
         
@@ -435,14 +436,15 @@
             restDays.push(secondRest);
         }
 
+        // שמירת ימי המנוחה שנבחרו ב-localStorage
         localStorage.setItem('user_rest_days', JSON.stringify(restDays));
 
         const standardWorkouts = [
-            rawWorkouts[1], 
-            rawWorkouts[3], 
-            rawWorkouts[4], 
-            rawWorkouts[5], 
-            rawWorkouts[6]  
+            rawWorkouts[1], // כוח + הליכון
+            rawWorkouts[3], // כוח גוף מלא
+            rawWorkouts[4], // אירובי + בטן
+            rawWorkouts[5], // כוח גוף מלא
+            rawWorkouts[6]  // הליכון בשיפוע
         ];
 
         let updatedWeekly = {};
@@ -471,68 +473,8 @@
         if (action.type === "SET_REST_DAYS" && action.restDays) {
             updateDynamicRestDays(action.restDays);
         }
-        else if (action.type === "ADD_EXERCISE" && action.exercise) {
-            let day = action.day || document.getElementById('day-select').value;
-            
-            let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
-            if (!customEx[day]) customEx[day] = [];
-            customEx[day].push(action.exercise);
-            localStorage.setItem('added_exercises', JSON.stringify(customEx));
-
-            let samCustomWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || '{}');
-            if (samCustomWeekly[day] && samCustomWeekly[day].exercises) {
-                if (samCustomWeekly[day].exercises.some(e => e.isRestDay)) {
-                    samCustomWeekly[day].exercises = [];
-                    samCustomWeekly[day].title = "אימון משקל גוף מותאם";
-                }
-                samCustomWeekly[day].exercises.push(action.exercise);
-                localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samCustomWeekly));
-            }
-
-            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
-            if (removedEx[day]) {
-                removedEx[day] = removedEx[day].filter(name => !name.toLowerCase().includes(action.exercise.name.toLowerCase()));
-                localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
-            }
-
-            loadWorkout();
-        }
-        else if (action.type === "REMOVE_EXERCISE" && action.exerciseName) {
-            let targetDay = action.day || document.getElementById('day-select').value;
-            let query = action.exerciseName.toLowerCase().trim();
-
-            // 1. הסרה מרשימת התרגילים שהוספו
-            let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
-            if (customEx[targetDay]) {
-                customEx[targetDay] = customEx[targetDay].filter(ex => !ex.name.toLowerCase().includes(query) && !query.includes(ex.name.toLowerCase()));
-                localStorage.setItem('added_exercises', JSON.stringify(customEx));
-            }
-
-            // 2. הסרה ישירה מהמערכת השבועית המותאמת (כולל ימי מנוחה או אימונים רגילים)
-            let samCustomWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || '{}');
-            if (samCustomWeekly[targetDay] && samCustomWeekly[targetDay].exercises) {
-                samCustomWeekly[targetDay].exercises = samCustomWeekly[targetDay].exercises.filter(ex => !ex.name.toLowerCase().includes(query) && !query.includes(ex.name.toLowerCase()));
-                localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samCustomWeekly));
-            }
-
-            // 3. הוספה לרשימת התרגילים המוסרים הכללית (לסינון תצוגה גורף)
-            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
-            if (!removedEx[targetDay]) removedEx[targetDay] = [];
-            if (!removedEx[targetDay].includes(action.exerciseName)) {
-                removedEx[targetDay].push(action.exerciseName);
-            }
-            localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
-
-            loadWorkout();
-        }
-        else if (action.type === "RESTORE_EXERCISE" && action.exerciseName) {
-            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
-            let day = action.day || document.getElementById('day-select').value;
-            if (removedEx[day]) {
-                removedEx[day] = removedEx[day].filter(name => !name.toLowerCase().includes(action.exerciseName.toLowerCase()));
-                localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
-            }
-            loadWorkout();
+        else if (action.type === "SWAP_REST_DAY" && action.targetDay) {
+            updateDynamicRestDays([action.targetDay]);
         }
         else if (action.type === "SET_LEVEL" && action.value) {
             changeFitnessLevel(action.value);
@@ -574,6 +516,31 @@
             let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
             hiddenDefaults[slot] = ["ALL"];
             localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
+        }
+        else if (action.type === "ADD_EXERCISE" && action.exercise) {
+            let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
+            let day = action.day || document.getElementById('day-select').value;
+            if (!customEx[day]) customEx[day] = [];
+            customEx[day].push(action.exercise);
+            localStorage.setItem('added_exercises', JSON.stringify(customEx));
+            loadWorkout();
+        }
+        else if (action.type === "REMOVE_EXERCISE" && action.exerciseName) {
+            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
+            let day = action.day || document.getElementById('day-select').value;
+            if (!removedEx[day]) removedEx[day] = [];
+            removedEx[day].push(action.exerciseName);
+            localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
+            loadWorkout();
+        }
+        else if (action.type === "RESTORE_EXERCISE" && action.exerciseName) {
+            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
+            let day = action.day || document.getElementById('day-select').value;
+            if (removedEx[day]) {
+                removedEx[day] = removedEx[day].filter(name => name !== action.exerciseName);
+                localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
+            }
+            loadWorkout();
         }
     }
 
@@ -725,6 +692,7 @@
         }
     }
 
+    // בודק ומעדכן את ה-Streak תוך התחשבות בימי המנוחה המותאמים אישית
     function checkAndUpdateStreak() {
         const lastActive = localStorage.getItem('last_active_date');
         let streak = parseInt(localStorage.getItem('user_streak') || '0', 10);
@@ -735,13 +703,14 @@
             const today = new Date();
             const diffDays = Math.ceil(Math.abs(today - lastDate) / (1000 * 60 * 60 * 24));
 
+            // אם עבר יותר מיום, בודקים אם הימים שבאמצע היו ימי מנוחה מוגדרים
             if (diffDays > 1) {
                 let currentCheck = new Date(lastDate);
                 currentCheck.setDate(currentCheck.getDate() + 1);
                 let missedWorkout = false;
 
                 while (currentCheck < today) {
-                    let dayOfWeek = currentCheck.getDay() + 1;
+                    let dayOfWeek = currentCheck.getDay() + 1; // 1=ראשון, 7=שבת
                     if (!userRestDays.includes(dayOfWeek)) {
                         missedWorkout = true;
                         break;
@@ -1130,39 +1099,21 @@
         let baseExercises = (data.exercises && Array.isArray(data.exercises)) ? data.exercises : [];
         let exercisesToDisplay = [...baseExercises];
         
-        // סינון תרגילים שהוסרו מתוך כל רשימות הבסיס / המערכת
-        exercisesToDisplay = exercisesToDisplay.filter(ex => {
-            if (!ex || !ex.name) return false;
-            let exLower = ex.name.toLowerCase();
-            return !removedEx.some(remName => {
-                let remLower = remName.toLowerCase();
-                return exLower.includes(remLower) || remLower.includes(exLower);
-            });
-        });
+        exercisesToDisplay = exercisesToDisplay.filter(ex => ex && ex.name && !removedEx.includes(ex.name));
 
-        // הוספת תרגילים שנוספו באופן אישי (תוך התחשבות ברשימת ההסרות)
         if (Array.isArray(addedEx)) {
             addedEx.forEach(ex => {
                 if (!ex || !ex.name) return;
-                let exLower = ex.name.toLowerCase();
-                let isRemoved = removedEx.some(remName => {
-                    let remLower = remName.toLowerCase();
-                    return exLower.includes(remLower) || remLower.includes(exLower);
+                let lvlObj = {};
+                lvlObj[currentLevel] = { sets: ex.sets || 3, work: ex.work || 40, rest: ex.rest || 45, reps: ex.reps || "12 חזרות" };
+                exercisesToDisplay.push({
+                    name: ex.name,
+                    level1: lvlObj.level1 || lvlObj[currentLevel],
+                    level2: lvlObj.level2 || lvlObj[currentLevel],
+                    level3: lvlObj.level3 || lvlObj[currentLevel],
+                    level4: lvlObj.level4 || lvlObj[currentLevel],
+                    level5: lvlObj.level5 || lvlObj[currentLevel]
                 });
-                if (isRemoved) return;
-
-                if (!exercisesToDisplay.some(e => e.name.toLowerCase() === exLower)) {
-                    let lvlObj = {};
-                    lvlObj[currentLevel] = { sets: ex.sets || 3, work: ex.work || 40, rest: ex.rest || 45, reps: ex.reps || "12 חזרות" };
-                    exercisesToDisplay.push({
-                        name: ex.name,
-                        level1: lvlObj.level1 || lvlObj[currentLevel],
-                        level2: lvlObj.level2 || lvlObj[currentLevel],
-                        level3: lvlObj.level3 || lvlObj[currentLevel],
-                        level4: lvlObj.level4 || lvlObj[currentLevel],
-                        level5: lvlObj.level5 || lvlObj[currentLevel]
-                    });
-                }
             });
         }
 
