@@ -426,6 +426,42 @@
         }
     }
 
+    // פונקציה חכמה לחישוב מחדש של תוכנית האימונים השבועית
+    function restructureWeeklySchedule(targetRestDay) {
+        let weekly = JSON.parse(JSON.stringify(rawWorkouts));
+        let restDayNum = parseInt(targetRestDay, 10);
+
+        let exercisesToMove = [];
+        if (weekly[restDayNum] && !weekly[restDayNum].exercises[0].isRestDay) {
+            exercisesToMove = weekly[restDayNum].exercises;
+        }
+
+        weekly[restDayNum] = {
+            title: "יום מנוחה מותאם אישית",
+            exercises: [{ name: "מנוחה מלאה", isRestDay: true }]
+        };
+
+        if (exercisesToMove.length > 0) {
+            let availableDays = [1, 2, 3, 4, 5, 6, 7].filter(d => d !== restDayNum && !weekly[d].exercises[0].isRestDay);
+            
+            if (availableDays.length > 0) {
+                exercisesToMove.forEach((ex, index) => {
+                    let destDay = availableDays[index % availableDays.length];
+                    if (!weekly[destDay].exercises.some(e => e.name === ex.name)) {
+                        weekly[destDay].exercises.push(ex);
+                    }
+                });
+            } else {
+                let fallbackDay = restDayNum === 1 ? 2 : 1;
+                weekly[fallbackDay].title = "אימון כוח + אירובי מורחב";
+                exercisesToMove.forEach(ex => weekly[fallbackDay].exercises.push(ex));
+            }
+        }
+
+        localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(weekly));
+        loadWorkout();
+    }
+
     // ניהול פעולות מותאמות אישית מסאם
     function handleSamAction(action) {
         if (!action || !action.type) return;
@@ -471,9 +507,8 @@
             hiddenDefaults[slot] = ["ALL"];
             localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
         }
-        else if (action.type === "RESTRUCTURE_WEEKLY_WORKOUTS" && action.updatedWeek) {
-            localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(action.updatedWeek));
-            loadWorkout();
+        else if (action.type === "SWAP_REST_DAY" && action.targetDay) {
+            restructureWeeklySchedule(action.targetDay);
         }
         else if (action.type === "ADD_EXERCISE" && action.exercise) {
             let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
@@ -514,7 +549,7 @@
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'chat-msg sam';
         loadingDiv.id = 'loading-sam';
-        loadingDiv.innerText = 'סאם מחשב את התוכנית האופטימלית... 🤖';
+        loadingDiv.innerText = 'סאם מעדכן את האפליקציה... 🤖';
         box.appendChild(loadingDiv);
         box.scrollTop = box.scrollHeight;
 
@@ -532,7 +567,7 @@
             });
         });
 
-        const recentHistory = conversationHistory.slice(-12);
+        const recentHistory = conversationHistory.slice(-10);
 
         try {
             const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
