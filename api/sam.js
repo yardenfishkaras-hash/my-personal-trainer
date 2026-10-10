@@ -43,9 +43,9 @@ export default async function handler(req, res) {
 2. קביעת שעת התראה יומית (בפורמט HH:MM):
    {"type": "SET_NOTIFICATION", "time": "17:30"}
 3. הוספת רכיב לתפריט ארוחה:
-   {"type": "ADD_MEAL_ITEM", "timeSlot": "צהריים", "item": "כוס ירקות ירוקים"}
-4. הסרת רכיב מתפריט ארוחה:
-   {"type": "REMOVE_MEAL_ITEM", "timeSlot": "צהריים", "item": "פתיתים"}
+   {"type": "ADD_MEAL_ITEM", "timeSlot": "כללי", "item": "שקד"}
+4. הסרת רכיב/מילה מהתפריט (כמו "טופו", "טונה", "פתיתים"):
+   {"type": "REMOVE_MEAL_ITEM", "item": "טופו"}
 
 אם המשתמש לא ביקש לבצע שינוי באפליקציה, החזר "action": null.
 שים לב: החזר JSON תקין בלבד ללא עטיפת markdown!`
@@ -75,7 +75,6 @@ export default async function handler(req, res) {
 
     let replyText = data.choices[0].message.content.trim();
     
-    // ניקוי מחרזות במידה והמודל עוטף ב-markdown
     if (replyText.startsWith("```json")) {
       replyText = replyText.replace(/^```json/, "").replace(/```$/, "").trim();
     } else if (replyText.startsWith("```")) {
