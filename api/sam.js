@@ -34,6 +34,9 @@ export default async function handler(req, res) {
       }
     ];
 
+    // בחר מודל בהתאם למוצר: מודל Vision לתמונות, ומודל openai/gpt-oss-20b לטקסט
+    const selectedModel = image ? "llama-3.2-90b-vision-preview" : "openai/gpt-oss-20b";
+
     if (image) {
       messages.push({
         role: "user",
@@ -57,7 +60,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // שימוש במודל openai/gpt-oss-20b ב-Groq
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -65,7 +67,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
+        model: selectedModel,
         messages: messages,
         temperature: 0.7,
         max_tokens: 1000
