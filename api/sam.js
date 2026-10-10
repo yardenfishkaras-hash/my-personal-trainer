@@ -42,8 +42,8 @@ export default async function handler(req, res) {
    {"type": "SET_LEVEL", "value": "level3"}
 2. קביעת שעת התראה יומית (בפורמט HH:MM):
    {"type": "SET_NOTIFICATION", "time": "17:30"}
-3. הוספת רכיב לתפריט ארוחה:
-   {"type": "ADD_MEAL_ITEM", "timeSlot": "כללי", "item": "שקד"}
+3. הוספת רכיב לתפריט ארוחה (הערכים המותרים ל-timeSlot הם בלבד: "בוקר", "עשר", "צהריים", "אחר הצהריים", "ערב", "לילה"):
+   {"type": "ADD_MEAL_ITEM", "timeSlot": "עשר", "item": "כריך בריא"}
 4. הסרת רכיב/מילה מהתפריט (כמו "טופו", "טונה", "פתיתים"):
    {"type": "REMOVE_MEAL_ITEM", "item": "טופו"}
 
