@@ -260,13 +260,13 @@
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
-            המוח החכם שלך: מחובר ל-AI ומלווה אותך באימונים בתזונה וב-Streak!
+            המוח החכם שלך: מחובר ל-AI ומנהל עבורך את הרמות, התזונה וההתראות!
         </p>
 
         <div id="chat-box" class="chat-container"></div>
 
         <div class="chat-input-box">
-            <input type="text" id="chat-input" placeholder="שאל את סאם כל דבר..." style="margin:0;">
+            <input type="text" id="chat-input" placeholder="שאל את סאם או בקש שינוי..." style="margin:0;">
             <button class="btn btn-sam" style="width: auto; margin:0; padding: 0 16px;" onclick="sendToSam()">שלח</button>
         </div>
 
@@ -409,7 +409,7 @@
         if (savedHistory) {
             box.innerHTML = savedHistory;
         } else {
-            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני מחובר ל-AI ויכול לעזור לך באימונים, בתזונה ובחישוב קלוריות!</div>`;
+            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני יכול לעזור לך באימונים, להעלות/להוריד רמה, לקבוע התראות ולעדכן תפריטים!</div>`;
         }
         box.scrollTop = box.scrollHeight;
     }
@@ -423,6 +423,33 @@
         if (confirm("האם אתה בטוח שתרצה למחוק את כל היסטוריית השיחות עם סאם?")) {
             localStorage.removeItem('sam_chat_history');
             loadChatHistory();
+        }
+    }
+
+    // ביצוע פקודות ישירות מסאם באפליקציה
+    function handleSamAction(action) {
+        if (!action || !action.type) return;
+
+        if (action.type === "SET_LEVEL" && action.value) {
+            changeFitnessLevel(action.value);
+            initLevelSelector();
+        } 
+        else if (action.type === "SET_NOTIFICATION" && action.time) {
+            document.getElementById('notif-time').value = action.time;
+            setDailyReminder();
+        }
+        else if (action.type === "ADD_MEAL_ITEM") {
+            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
+            if (!customMeals[action.timeSlot]) customMeals[action.timeSlot] = [];
+            customMeals[action.timeSlot].push(action.item);
+            localStorage.setItem('custom_meals', JSON.stringify(customMeals));
+        }
+        else if (action.type === "REMOVE_MEAL_ITEM") {
+            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
+            if (customMeals[action.timeSlot]) {
+                customMeals[action.timeSlot] = customMeals[action.timeSlot].filter(i => i !== action.item);
+                localStorage.setItem('custom_meals', JSON.stringify(customMeals));
+            }
         }
     }
 
@@ -442,15 +469,12 @@
         box.appendChild(loadingDiv);
         box.scrollTop = box.scrollHeight;
 
-        // איסוף היסטוריה ללא הודעות הברכה האוטומטיות שגורמות לבלבול בלולאה
         const messageElements = box.querySelectorAll('.chat-msg:not(#loading-sam)');
         const conversationHistory = [];
         
         messageElements.forEach(el => {
             const isUser = el.classList.contains('user');
             const msgText = el.innerText;
-            
-            // סינון ברכות פתיחה אוטומטיות מראש
             if (!isUser && (msgText.includes("היי! אני סאם") || msgText.includes("שלום! אני סאם"))) return;
 
             conversationHistory.push({
@@ -476,6 +500,12 @@
             } else {
                 appendChatMsg('תקבל תשובה בקרוב. נסה שוב.', 'sam');
             }
+
+            // אם סאם החזיר פקודה - בצע אותה באפליקציה!
+            if (data.action) {
+                handleSamAction(data.action);
+            }
+
         } catch (error) {
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
             appendChatMsg('שגיאה בחיבור: ' + error.message, 'sam');
@@ -691,37 +721,54 @@
         const [hours, minutes] = timeStr.split(':').map(Number);
         const totalMinutes = hours * 60 + minutes;
 
+        let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
+
+        let baseMeal = {};
+        let slotName = "";
+
         if (totalMinutes >= 360 && totalMinutes < 600) {
-            return {
+            slotName = "בוקר";
+            baseMeal = {
                 title: "🌅 ארוחת בוקר (לפני בית ספר)",
-                content: "• <b>אופציה 1:</b> יוגורט חלבון + בננה/תפוח + חופן אגוזים.<br>• <b>אופציה 2:</b> כוס חלב/משקה סויה + 4 כפות שיבולת שועל.<br>• <b>אופציה 3:</b> 2 פריכיות עם גבינה צהובה 9% / לבנה 5% + ירק.<br>• <b>אופציה 4:</b> שייק: חלב, בננה, כפית חמאת בוטנים ושיבולת שועל."
+                content: "• <b>אופציה 1:</b> יוגורט חלבון + בננה/תפוח + חופן אגוזים.<br>• <b>אופציה 2:</b> כוס חלב/משקה סויה + 4 כפות שיבולת שועל.<br>• <b>אופציה 3:</b> 2 פריכיות עם גבינה צהובה 9% / לבנה 5% + ירק."
             };
         } else if (totalMinutes >= 600 && totalMinutes < 780) {
-            return {
+            slotName = "עשר";
+            baseMeal = {
                 title: "🏫 ארוחת עשר (בית ספר)",
-                content: "<b>בחר 2 כריכים מלחם מלא:</b><br>• <b>כריך טונה:</b> טונה, מעט מיונז קל/חומוס + מלפפון.<br>• <b>כריך חביתה:</b> חביתה מ-2 ביצים + עגבנייה.<br>• <b>כריך גבינה:</b> צהובה 9% / צפתית / בולגרית + ירק.<br>• <b>כריך טופו:</b> אופציה צמחונית עשירה בחלבון.<br><i>תוספת: פרי (תפוח/אגס/קלמנטינה) או חופן שקדים.</i>"
+                content: "<b>כריכים מלחם מלא:</b><br>• טונה / חביתה / גבינה צהובה 9% / טופו."
             };
         } else if (totalMinutes >= 780 && totalMinutes < 960) {
-            return {
-                title: "🍽️ ארוחת צהריים (חזרה מבית ספר)",
-                content: "• <b>חלבון:</b> חזה עוף / שניצל בתנור / קציצות / דג / טופו.<br>• <b>פחמימה:</b> כוס וחצי אורז / פתיתים / פסטה מלאה / בטטה / כוסמת.<br>• <b>ירק:</b> סלט טרי, ירקות מבושלים (שעועית ירוקה/ברוקולי) או בתנור."
+            slotName = "צהריים";
+            baseMeal = {
+                title: "🍽️ ארוחת צהריים",
+                content: "• <b>חלבון:</b> חזה עוף / שניצל / קציצות / דג / טופו.<br>• <b>פחמימה:</b> אורז / פתיתים / פסטה / בטטה."
             };
         } else if (totalMinutes >= 960 && totalMinutes < 1140) {
-            return {
-                title: "⚡ ארוחת אחר הצהריים (לפני אימון)",
-                content: "• <b>אופציה 1:</b> לחם מלא עם כפית חמאת בוטנים ובננה.<br>• <b>אופציה 2:</b> מעדן חלבון + תפוח.<br>• <b>אופציה 3:</b> 2-3 תמרים + 5 שקדים טבעיים.<br>• <b>אופציה 4:</b> חטיף דגנים/חלבון."
+            slotName = "אחר הצהריים";
+            baseMeal = {
+                title: "⚡ ארוחת אחר הצהריים",
+                content: "• לחם מלא עם חמאת בוטנים ובננה או מעדן חלבון."
             };
         } else if (totalMinutes >= 1140 && totalMinutes < 1320) {
-            return {
-                title: "🌙 ארוחת ערב (לאחר אימון)",
-                content: "• <b>אופציה 1:</b> שקשוקה/חביתה מ-2 ביצים + 3 כפות קוטג' 5% + 2 פרוסות לחם מלא + סלט.<br>• <b>אופציה 2:</b> טוסט גבינה צהובה 9% וטונה + ירקות.<br>• <b>אופציה 3:</b> שקשוקת טופו / גבינה לבנה + פיתה כוסמין.<br>• <b>אופציה 4:</b> סלט יווני עם בולגרית 5%, ביצה קשה, זיתים ולחם."
+            slotName = "ערב";
+            baseMeal = {
+                title: "🌙 ארוחת ערב",
+                content: "• שקשוקה/חביתה + קוטג' + לחם מלא + סלט."
             };
         } else {
-            return {
+            slotName = "לילה";
+            baseMeal = {
                 title: "💤 ארוחת לילה",
-                content: "• קוטג' / גבינה לבנה 5% + מלפפון.<br>• כוס חלב חם / משקה חלבון קל.<br><i>הקפד על 8-9 שעות שינה לבניית השריר!</i>"
+                content: "• קוטג' / גבינה לבנה 5% + מלפפון."
             };
         }
+
+        if (customMeals[slotName] && customMeals[slotName].length > 0) {
+            baseMeal.content += `<br><br><b>➕ תוספות מסאם:</b><br>• ` + customMeals[slotName].join('<br>• ');
+        }
+
+        return baseMeal;
     }
 
     const rawWorkouts = {
