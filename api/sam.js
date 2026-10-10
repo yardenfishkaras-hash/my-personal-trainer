@@ -27,28 +27,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "מפתח ה-API של Groq אינו מוגדר בשרת" });
     }
 
-    // 1. איתור אוטומטי של מודל Vision זמין בחשבון ה-Groq שלך
-    let visionModel = "meta-llama/llama-4-scout-17b-16e-instruct"; // ברירת מחדל
-    try {
-      const modelsResponse = await fetch("https://api.groq.com/openai/v1/models", {
-        headers: { "Authorization": `Bearer ${apiKey}` }
-      });
-      const modelsData = await modelsResponse.json();
-      
-      if (modelsData.data && Array.isArray(modelsData.data)) {
-        // מחפש מודל שחלק משמו מכיל vision, scout, או multimodal
-        const found = modelsData.data.find(m => 
-          m.id.includes("vision") || m.id.includes("scout") || m.id.includes("maverick")
-        );
-        if (found) {
-          visionModel = found.id;
-        }
-      }
-    } catch (e) {
-      console.log("Failed to fetch dynamically, using fallback model:", visionModel);
-    }
-
-    // 2. בניית הודעת הצ'אט
     let messages = [
       {
         role: "system",
@@ -79,7 +57,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. שליחת הבקשה ל-Groq
+    // שימוש במודל openai/gpt-oss-20b ב-Groq
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -87,7 +65,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: image ? visionModel : "llama-3.1-8b-instant",
+        model: "openai/gpt-oss-20b",
         messages: messages,
         temperature: 0.7,
         max_tokens: 1000
@@ -97,7 +75,7 @@ export default async function handler(req, res) {
     const data = await groqResponse.json();
 
     if (!groqResponse.ok) {
-      throw new Error(data.error?.message || "שגיאה בפנייה לשרת של Groq");
+      throw new Error(data.error?.message || "שגיאה בפנייה לשרת");
     }
 
     const replyText = data.choices[0].message.content;
