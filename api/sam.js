@@ -27,24 +27,23 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "מפתח ה-API של Groq אינו מוגדר בשרת" });
     }
 
-    // הפיכת הכל למחרוזת טקסט אחת (String)
-    let userTextString = message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית.";
-    if (image) {
-      userTextString += `\n\n[תמונה מצורפת ב-Base64]:\n${image}`;
-    }
-
-    const messages = [
+    let messages = [
       {
         role: "system",
         content: "אתה סאם, מאמן אישי חכם, ידידותי ותומך בעברית. אתה עוזר למשתמש בכושר, תזונה וניהול ה-Streak שלו."
-      },
-      {
-        role: "user",
-        content: userTextString
       }
     ];
 
-    // מודל נעול ל-openai/gpt-oss-20b בלבד
+    let userContent = message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית.";
+    if (image) {
+      userContent += ` (המשתמש העלה תמונה לבדיקה).`;
+    }
+
+    messages.push({
+      role: "user",
+      content: userContent
+    });
+
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
