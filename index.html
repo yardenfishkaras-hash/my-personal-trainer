@@ -260,22 +260,18 @@
     <div id="sam-screen" class="hidden">
         <h2>סאם (SAM) 🤖</h2>
         <p style="text-align: center; color: var(--subtext); font-size: 13px; margin-bottom: 10px;">
-            המוח החכם שלך: מחובר ל-AI אמיתי וזוכר את כל השיחות שלך!
+            המוח החכם שלך: מחובר ל-AI ומלווה אותך באימונים בתזונה וב-Streak!
         </p>
 
         <div id="chat-box" class="chat-container"></div>
 
         <div class="chat-input-box">
-            <input type="text" id="chat-input" placeholder="שאל את סאם או בקש שינוי..." style="margin:0;">
+            <input type="text" id="chat-input" placeholder="שאל את סאם כל דבר..." style="margin:0;">
             <button class="btn btn-sam" style="width: auto; margin:0; padding: 0 16px;" onclick="sendToSam()">שלח</button>
         </div>
 
-        <div style="margin-top: 10px; display: flex; gap: 8px;">
-            <label class="btn" style="background-color: #0284c7; font-size: 13px; padding: 10px; margin: 0; cursor: pointer; flex: 1; text-align: center;">
-                📷 צלם אוכל
-                <input type="file" accept="image/*" style="display: none;" onchange="handleFoodImage(this)">
-            </label>
-            <button class="btn btn-secondary" style="margin: 0; padding: 10px; font-size: 13px; flex: 1;" onclick="showScreen('home-screen')">חזרה לתפריט</button>
+        <div style="margin-top: 10px;">
+            <button class="btn btn-secondary" style="margin: 0; padding: 10px; font-size: 13px; width: 100%;" onclick="showScreen('home-screen')">חזרה לתפריט</button>
         </div>
         <div style="text-align: center; margin-top: 8px;">
             <button onclick="clearChatHistory()" style="background: none; border: none; color: #ef4444; font-size: 12px; cursor: pointer; text-decoration: underline;">מחק היסטוריית שיחות</button>
@@ -413,7 +409,7 @@
         if (savedHistory) {
             box.innerHTML = savedHistory;
         } else {
-            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני מחובר למוח אמיתי ויכול לעזור לך בכל מה שתצטרך!</div>`;
+            box.innerHTML = `<div class="chat-msg sam">היי! אני סאם, המאמן האישי שלך. אני מחובר ל-AI ויכול לעזור לך באימונים, בתזונה ובחישוב קלוריות!</div>`;
         }
         box.scrollTop = box.scrollHeight;
     }
@@ -454,7 +450,7 @@
             });
 
             const data = await response.json();
-            document.getElementById('loading-sam').remove();
+            if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
 
             if (data.reply) {
                 appendChatMsg(data.reply, 'sam');
@@ -475,13 +471,6 @@
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
         saveChatHistory();
-    }
-
-    function handleFoodImage(input) {
-        if (input.files && input.files[0]) {
-            appendChatMsg("📷 העלית תמונה של אוכל. היות והמודל מותאם לטקסט, אנא כתוב בקצרה מה יש במנה (למשל: סלט, חזה עוף ואורז) כדי שסאם יחשב לך את הקלוריות במדויק!", 'sam');
-            input.value = "";
-        }
     }
 
     function calculateCalories() {
