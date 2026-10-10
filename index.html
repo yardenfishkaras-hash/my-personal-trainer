@@ -426,7 +426,7 @@
         }
     }
 
-    // ביצוע פקודות ישירות מסאם באפליקציה
+    // טיפול בשינויים שהתקבלו מסאם
     function handleSamAction(action) {
         if (!action || !action.type) return;
 
@@ -440,15 +440,17 @@
         }
         else if (action.type === "ADD_MEAL_ITEM") {
             let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-            if (!customMeals[action.timeSlot]) customMeals[action.timeSlot] = [];
-            customMeals[action.timeSlot].push(action.item);
+            const slot = action.timeSlot || 'כללי';
+            if (!customMeals[slot]) customMeals[slot] = [];
+            customMeals[slot].push(action.item);
             localStorage.setItem('custom_meals', JSON.stringify(customMeals));
         }
-        else if (action.type === "REMOVE_MEAL_ITEM") {
-            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-            if (customMeals[action.timeSlot]) {
-                customMeals[action.timeSlot] = customMeals[action.timeSlot].filter(i => i !== action.item);
-                localStorage.setItem('custom_meals', JSON.stringify(customMeals));
+        else if (action.type === "REMOVE_MEAL_ITEM" && action.item) {
+            // שמירת הפריט במערך הפריטים המוסרים באופן גלובלי בתפריט
+            let removedItems = JSON.parse(localStorage.getItem('removed_meal_items') || '[]');
+            if (!removedItems.includes(action.item)) {
+                removedItems.push(action.item);
+                localStorage.setItem('removed_meal_items', JSON.stringify(removedItems));
             }
         }
     }
@@ -501,7 +503,6 @@
                 appendChatMsg('תקבל תשובה בקרוב. נסה שוב.', 'sam');
             }
 
-            // אם סאם החזיר פקודה - בצע אותה באפליקציה!
             if (data.action) {
                 handleSamAction(data.action);
             }
@@ -722,6 +723,7 @@
         const totalMinutes = hours * 60 + minutes;
 
         let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
+        let removedItems = JSON.parse(localStorage.getItem('removed_meal_items') || '[]');
 
         let baseMeal = {};
         let slotName = "";
@@ -764,8 +766,18 @@
             };
         }
 
+        // סינון רכיבים שהוגדרו להסרה מהטקסט המקורי
+        removedItems.forEach(item => {
+            const regExp = new RegExp(`/?\\s*${item}`, 'gi');
+            baseMeal.content = baseMeal.content.replace(regExp, '');
+        });
+
+        // הוספת רכיבים חדשים שסאם הוסיף
         if (customMeals[slotName] && customMeals[slotName].length > 0) {
-            baseMeal.content += `<br><br><b>➕ תוספות מסאם:</b><br>• ` + customMeals[slotName].join('<br>• ');
+            const filteredCustom = customMeals[slotName].filter(i => !removedItems.includes(i));
+            if (filteredCustom.length > 0) {
+                baseMeal.content += `<br><br><b>➕ תוספות מסאם:</b><br>• ` + filteredCustom.join('<br>• ');
+            }
         }
 
         return baseMeal;
