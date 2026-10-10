@@ -426,39 +426,39 @@
         }
     }
 
-    // פונקציה חכמה לחישוב מחדש של תוכנית האימונים השבועית
+    // פונקציה חכמה ומדויקת להעברת תרגילים ושמירה מלאה על כל דרגות הקושי והתרגילים
     function restructureWeeklySchedule(targetRestDay) {
-        let weekly = JSON.parse(JSON.stringify(rawWorkouts));
-        let restDayNum = parseInt(targetRestDay, 10);
-
-        let exercisesToMove = [];
-        if (weekly[restDayNum] && !weekly[restDayNum].exercises[0].isRestDay) {
-            exercisesToMove = weekly[restDayNum].exercises;
+        let samWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || 'null');
+        if (!samWeekly) {
+            samWeekly = JSON.parse(JSON.stringify(rawWorkouts));
         }
 
-        weekly[restDayNum] = {
+        let restDayNum = parseInt(targetRestDay, 10);
+
+        // שומרים את כל התרגילים המלאים של היום שהופך למנוחה
+        let exToTransfer = [];
+        if (samWeekly[restDayNum] && samWeekly[restDayNum].exercises) {
+            exToTransfer = samWeekly[restDayNum].exercises.filter(ex => !ex.isRestDay);
+        }
+
+        // הופכים את היום המבוקש ליום מנוחה
+        samWeekly[restDayNum] = {
             title: "יום מנוחה מותאם אישית",
             exercises: [{ name: "מנוחה מלאה", isRestDay: true }]
         };
 
-        if (exercisesToMove.length > 0) {
-            let availableDays = [1, 2, 3, 4, 5, 6, 7].filter(d => d !== restDayNum && !weekly[d].exercises[0].isRestDay);
-            
-            if (availableDays.length > 0) {
-                exercisesToMove.forEach((ex, index) => {
-                    let destDay = availableDays[index % availableDays.length];
-                    if (!weekly[destDay].exercises.some(e => e.name === ex.name)) {
-                        weekly[destDay].exercises.push(ex);
-                    }
-                });
-            } else {
-                let fallbackDay = restDayNum === 1 ? 2 : 1;
-                weekly[fallbackDay].title = "אימון כוח + אירובי מורחב";
-                exercisesToMove.forEach(ex => weekly[fallbackDay].exercises.push(ex));
-            }
+        // אם היו תרגילים ביום הזה, מעבירים אותם ליום שני (יום 2) שהוא יום מנוחה במקור
+        if (exToTransfer.length > 0) {
+            let targetDayNum = 2; // יום שני
+            if (restDayNum === 2) targetDayNum = 1; // מקרה קצה - אם בחרו את יום שני
+
+            samWeekly[targetDayNum] = {
+                title: "אימון כוח (הועבר מיום חמישי)",
+                exercises: exToTransfer
+            };
         }
 
-        localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(weekly));
+        localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samWeekly));
         loadWorkout();
     }
 
