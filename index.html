@@ -440,7 +440,6 @@
         }
         else if (action.type === "ADD_MEAL_ITEM" && action.item) {
             let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-            // אם המיקום לא מוגדר במדויק, ברירת המחדל תהיה ארוחת עשר או צהריים
             let slot = action.timeSlot || 'עשר';
             if (!customMeals[slot]) customMeals[slot] = [];
             if (!customMeals[slot].includes(action.item)) {
@@ -487,7 +486,7 @@
             });
         });
 
-        const recentHistory = conversationHistory.slice(-6);
+        const recentHistory = conversationHistory.slice(-8);
 
         try {
             const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
@@ -774,14 +773,16 @@
             baseMeal.content = baseMeal.content.replace(regExp, '');
         });
 
-        // הוספת פריטים שסאם הוסיף לאותה ארוחה או פריטים שנוספו באופן כללי
+        // הוספת פריטים כחלק טבעי מרשימת התפריט ללא כותרת "תוספות מסאם"
         let itemsForThisSlot = [];
         if (customMeals[slotName]) itemsForThisSlot = itemsForThisSlot.concat(customMeals[slotName]);
         if (customMeals['כללי']) itemsForThisSlot = itemsForThisSlot.concat(customMeals['כללי']);
 
         const filteredCustom = itemsForThisSlot.filter(i => !removedItems.includes(i));
         if (filteredCustom.length > 0) {
-            baseMeal.content += `<br><br><b>➕ תוספות מסאם:</b><br>• ` + filteredCustom.join('<br>• ');
+            filteredCustom.forEach(item => {
+                baseMeal.content += `<br>• ${item}`;
+            });
         }
 
         return baseMeal;
