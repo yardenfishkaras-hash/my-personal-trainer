@@ -266,7 +266,7 @@
         <div id="chat-box" class="chat-container"></div>
 
         <div class="chat-input-box">
-            <input type="text" id="chat-input" placeholder="שאל את סאם או בקש שינוי..." style="margin:0;">
+            <input type="text" id="chat-input" placeholder="שאל את סאם או בקש שינוי..." style="margin:0;" onkeypress="if(event.key === 'Enter') sendToSam();">
             <button class="btn btn-sam" style="width: auto; margin:0; padding: 0 16px;" onclick="sendToSam()">שלח</button>
         </div>
 
@@ -426,61 +426,17 @@
         }
     }
 
-    function updateDynamicRestDays(restDaysArray) {
-        let restDays = restDaysArray.map(Number);
-        
-        if (restDays.length === 1) {
-            let secondRest = restDays[0] === 6 ? 7 : restDays[0] + 1;
-            if (secondRest > 7) secondRest = 1;
-            restDays.push(secondRest);
-        }
-
-        localStorage.setItem('user_rest_days', JSON.stringify(restDays));
-
-        const standardWorkouts = [
-            rawWorkouts[1], 
-            rawWorkouts[3], 
-            rawWorkouts[4], 
-            rawWorkouts[5], 
-            rawWorkouts[6]  
-        ];
-
-        let updatedWeekly = {};
-        let workoutIndex = 0;
-
-        for (let day = 1; day <= 7; day++) {
-            if (restDays.includes(day)) {
-                updatedWeekly[day] = {
-                    title: "יום מנוחה מותאם אישית",
-                    exercises: [{ name: "מנוחה מלאה", isRestDay: true }]
-                };
-            } else {
-                let workoutToAssign = standardWorkouts[workoutIndex % standardWorkouts.length];
-                updatedWeekly[day] = JSON.parse(JSON.stringify(workoutToAssign));
-                workoutIndex++;
-            }
-        }
-
-        localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(updatedWeekly));
-        loadWorkout();
-    }
-
     function handleSamAction(action) {
         if (!action || !action.type) return;
 
         let day = action.day || document.getElementById('day-select').value;
 
-        if (action.type === "SET_REST_DAYS" && action.restDays) {
-            updateDynamicRestDays(action.restDays);
-        }
-        else if (action.type === "ADD_EXERCISE" && action.exercise) {
-            // הוספה בטוחה לזיכרון התרגילים המוספים
+        if (action.type === "ADD_EXERCISE" && action.exercise) {
             let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
             if (!customEx[day]) customEx[day] = [];
             customEx[day].push(action.exercise);
             localStorage.setItem('added_exercises', JSON.stringify(customEx));
 
-            // הוספה ישירה גם למבנה השבועי (כדי שיופיע מיד בלי תלות במקור)
             let samCustomWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || '{}');
             if (!samCustomWeekly[day]) {
                 samCustomWeekly[day] = JSON.parse(JSON.stringify(rawWorkouts[day] || { title: "אימון מותאם", exercises: [] }));
@@ -492,7 +448,6 @@
             samCustomWeekly[day].exercises.push(action.exercise);
             localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samCustomWeekly));
 
-            // הסרה מרשימת החסימה אם התרגיל היה חסום פעם
             let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
             if (removedEx[day]) {
                 removedEx[day] = removedEx[day].filter(name => !name.toLowerCase().includes(action.exercise.name.toLowerCase()));
@@ -524,14 +479,6 @@
             localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
 
             loadWorkout();
-        }
-        else if (action.type === "SET_LEVEL" && action.value) {
-            changeFitnessLevel(action.value);
-            initLevelSelector();
-        } 
-        else if (action.type === "SET_NOTIFICATION" && action.time) {
-            document.getElementById('notif-time').value = action.time;
-            setDailyReminder();
         }
     }
 
@@ -574,6 +521,10 @@
                 body: JSON.stringify({ messages: recentHistory })
             });
 
+            if (!response.ok) {
+                throw new Error(`שגיאת שרת (${response.status})`);
+            }
+
             const data = await response.json();
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
 
@@ -589,7 +540,7 @@
 
         } catch (error) {
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
-            appendChatMsg('שגיאה בחיבור: ' + error.message, 'sam');
+            appendChatMsg('שגיאה בחיבור לשרת: ' + error.message, 'sam');
         }
     }
 
@@ -652,7 +603,6 @@
         
         let exercisesToDisplay = [...(data.exercises || [])];
         
-        // הוספת תרגילים אישיים
         if (Array.isArray(addedEx)) {
             addedEx.forEach(ex => {
                 if (ex && ex.name && !exercisesToDisplay.some(e => e.name.toLowerCase() === ex.name.toLowerCase())) {
@@ -661,7 +611,6 @@
             });
         }
 
-        // סינון תרגילים שהוסרו
         exercisesToDisplay = exercisesToDisplay.filter(ex => {
             if (!ex || !ex.name) return false;
             let exLower = ex.name.toLowerCase();
