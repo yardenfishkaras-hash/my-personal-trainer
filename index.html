@@ -471,12 +471,8 @@
             hiddenDefaults[slot] = ["ALL"];
             localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
         }
-        else if (action.type === "SWAP_REST_DAY" && action.restDay) {
-            let restDays = JSON.parse(localStorage.getItem('custom_rest_days') || '[]');
-            if (!restDays.includes(action.restDay)) {
-                restDays.push(action.restDay);
-                localStorage.setItem('custom_rest_days', JSON.stringify(restDays));
-            }
+        else if (action.type === "RESTRUCTURE_WEEKLY_WORKOUTS" && action.updatedWeek) {
+            localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(action.updatedWeek));
             loadWorkout();
         }
         else if (action.type === "ADD_EXERCISE" && action.exercise) {
@@ -518,7 +514,7 @@
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'chat-msg sam';
         loadingDiv.id = 'loading-sam';
-        loadingDiv.innerText = 'סאם חושב... 🤖';
+        loadingDiv.innerText = 'סאם מחשב את התוכנית האופטימלית... 🤖';
         box.appendChild(loadingDiv);
         box.scrollTop = box.scrollHeight;
 
@@ -1029,14 +1025,9 @@
 
     function loadWorkout() {
         const day = parseInt(document.getElementById('day-select').value, 10);
-        let restDays = JSON.parse(localStorage.getItem('custom_rest_days') || '[]');
         
-        let data;
-        if (restDays.includes(day)) {
-            data = { title: "יום מנוחה מותאם אישית", exercises: [{ name: "מנוחה", isRestDay: true }] };
-        } else {
-            data = rawWorkouts[day] || rawWorkouts[1];
-        }
+        let samCustomWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || '{}');
+        let data = samCustomWeekly[day] || samCustomWeekly[day.toString()] || rawWorkouts[day] || rawWorkouts[1];
         
         let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}')[day] || [];
         let addedEx = JSON.parse(localStorage.getItem('added_exercises') || '{}')[day] || [];
@@ -1080,7 +1071,7 @@
                         </div>
                     `;
                 } else {
-                    const lvlData = ex[currentLevel] || ex.level1 || { sets: 3, work: 30, rest: 45, reps: "10 חזרות" };
+                    const lvlData = ex[currentLevel] || ex.level1 || { sets: ex.sets || 3, work: ex.work || 30, rest: ex.rest || 45, reps: ex.reps || "10 חזרות" };
                     html += `
                         <div class="exercise-item">
                             <div class="exercise-info">
