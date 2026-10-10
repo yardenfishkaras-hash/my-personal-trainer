@@ -442,11 +442,26 @@
         box.appendChild(loadingDiv);
         box.scrollTop = box.scrollHeight;
 
+        // איסוף כל ההודעות בשיחה כדי לשלוח זיכרון מלא לשרת
+        const messageElements = box.querySelectorAll('.chat-msg:not(#loading-sam)');
+        const conversationHistory = [];
+        
+        messageElements.forEach(el => {
+            const role = el.classList.contains('user') ? 'user' : 'assistant';
+            conversationHistory.push({
+                role: role,
+                content: el.innerText
+            });
+        });
+
+        // שמירת 10 ההודעות האחרונות
+        const recentHistory = conversationHistory.slice(-10);
+
         try {
             const response = await fetch('https://my-personal-trainer-puce.vercel.app/api/sam', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ messages: recentHistory })
             });
 
             const data = await response.json();
