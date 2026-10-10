@@ -448,11 +448,26 @@
             }
         }
         else if (action.type === "REMOVE_MEAL_ITEM" && action.item) {
+            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
+            let slot = action.timeSlot || 'עשר';
+            
+            if (customMeals[slot]) {
+                // סינון כל הרכיבים שכוללים את מילת החיפוש (כמו "כריך")
+                customMeals[slot] = customMeals[slot].filter(i => !i.includes(action.item));
+                localStorage.setItem('custom_meals', JSON.stringify(customMeals));
+            }
+
             let removedItems = JSON.parse(localStorage.getItem('removed_meal_items') || '[]');
             if (!removedItems.includes(action.item)) {
                 removedItems.push(action.item);
                 localStorage.setItem('removed_meal_items', JSON.stringify(removedItems));
             }
+        }
+        else if (action.type === "CLEAR_MEAL_SLOT") {
+            let slot = action.timeSlot || 'עשר';
+            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
+            customMeals[slot] = [];
+            localStorage.setItem('custom_meals', JSON.stringify(customMeals));
         }
     }
 
@@ -767,18 +782,18 @@
             };
         }
 
-        // הסרת פריטים במידה והוגדרו להסרה
+        // הסרת פריטים לפי מילת המפתח שהוגדרה להסרה
         removedItems.forEach(item => {
             const regExp = new RegExp(`/?\\s*${item}`, 'gi');
             baseMeal.content = baseMeal.content.replace(regExp, '');
         });
 
-        // הוספת פריטים כחלק טבעי מרשימת התפריט ללא כותרת "תוספות מסאם"
+        // הוספת פריטים שסאם הוסיף
         let itemsForThisSlot = [];
         if (customMeals[slotName]) itemsForThisSlot = itemsForThisSlot.concat(customMeals[slotName]);
         if (customMeals['כללי']) itemsForThisSlot = itemsForThisSlot.concat(customMeals['כללי']);
 
-        const filteredCustom = itemsForThisSlot.filter(i => !removedItems.includes(i));
+        const filteredCustom = itemsForThisSlot.filter(i => !removedItems.some(rem => i.includes(rem)));
         if (filteredCustom.length > 0) {
             filteredCustom.forEach(item => {
                 baseMeal.content += `<br>• ${item}`;
