@@ -27,11 +27,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "מפתח ה-API של Groq אינו מוגדר בשרת" });
     }
 
-    // מפתח ה-content תמיד ישלח כמחרוזת (string) יחידה
-    let userContentString = message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית.";
-
+    // הפיכת הכל למחרוזת טקסט אחת יחידה (string בלבד)
+    let userTextString = message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית.";
+    
     if (image) {
-      userContentString += `\n\n[תמונה מצורפת בפורמט Base64 Data URL]:\n${image}`;
+      userTextString += `\n\n[תמונה מצורפת ב-Base64]:\n${image}`;
     }
 
     const messages = [
@@ -41,11 +41,11 @@ export default async function handler(req, res) {
       },
       {
         role: "user",
-        content: userContentString // מחרוזת טקסט בלבד
+        content: userTextString // מועבר אך ורק כ-string
       }
     ];
 
-    // מודל יחיד ועדכני
+    // שליחה אך ורק למודל openai/gpt-oss-20b
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "llama-3.2-11b-vision-instruct",
+        model: "openai/gpt-oss-20b",
         messages: messages,
         temperature: 0.7,
         max_tokens: 1000
