@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="אימון ותזונה">
     
     <!-- אייקון האפליקציה למסך הבית באייפון -->
-    <link rel="apple-touch-icon" href="icon.png?v=2">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
     
     <style>
         :root {
@@ -484,7 +484,7 @@
             }
         } catch (error) {
             if(document.getElementById('loading-sam')) document.getElementById('loading-sam').remove();
-            appendChatMsg('שגיאה בחיבור לשרת של סאם.', 'sam');
+            appendChatMsg('שגיאה בחיבור: ' + error.message, 'sam');
         }
     }
 
@@ -509,8 +509,9 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    const maxWidth = 800;
-                    const maxHeight = 800;
+                    // דחיסה משופרת ל-600 פיקסלים כדי למנוע עומס
+                    const maxWidth = 600;
+                    const maxHeight = 600;
                     let width = img.width;
                     let height = img.height;
 
@@ -530,7 +531,7 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
                     appendChatMsg("📷 העלית תמונה של אוכל לניתוח קלוריות...", 'user');
 
@@ -551,7 +552,9 @@
                         })
                     })
                     .then(res => {
-                        if (!res.ok) throw new Error("Server response: " + res.status);
+                        if (!res.ok) {
+                            return res.text().then(text => { throw new Error("קוד " + res.status + ": " + text); });
+                        }
                         return res.json();
                     })
                     .then(data => {
@@ -567,7 +570,7 @@
                         console.error("Error sending image:", err);
                         const loader = document.getElementById('loading-sam');
                         if (loader) loader.remove();
-                        appendChatMsg('שגיאה בחיבור לשרת לצורך ניתוח התמונה.', 'sam');
+                        appendChatMsg('שגיאה בחיבור: ' + err.message, 'sam');
                     });
                 };
                 img.src = e.target.result;
