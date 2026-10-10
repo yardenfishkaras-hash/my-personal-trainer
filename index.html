@@ -468,27 +468,31 @@
     function handleSamAction(action) {
         if (!action || !action.type) return;
 
+        let day = action.day || document.getElementById('day-select').value;
+
         if (action.type === "SET_REST_DAYS" && action.restDays) {
             updateDynamicRestDays(action.restDays);
         }
         else if (action.type === "ADD_EXERCISE" && action.exercise) {
-            let day = action.day || document.getElementById('day-select').value;
-            
+            // הוספה בטוחה לזיכרון התרגילים המוספים
             let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
             if (!customEx[day]) customEx[day] = [];
             customEx[day].push(action.exercise);
             localStorage.setItem('added_exercises', JSON.stringify(customEx));
 
+            // הוספה ישירה גם למבנה השבועי (כדי שיופיע מיד בלי תלות במקור)
             let samCustomWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || '{}');
-            if (samCustomWeekly[day] && samCustomWeekly[day].exercises) {
-                if (samCustomWeekly[day].exercises.some(e => e.isRestDay)) {
-                    samCustomWeekly[day].exercises = [];
-                    samCustomWeekly[day].title = "אימון משקל גוף מותאם";
-                }
-                samCustomWeekly[day].exercises.push(action.exercise);
-                localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samCustomWeekly));
+            if (!samCustomWeekly[day]) {
+                samCustomWeekly[day] = JSON.parse(JSON.stringify(rawWorkouts[day] || { title: "אימון מותאם", exercises: [] }));
             }
+            if (samCustomWeekly[day].exercises.some(e => e.isRestDay)) {
+                samCustomWeekly[day].exercises = [];
+                samCustomWeekly[day].title = "אימון משקל גוף מותאם";
+            }
+            samCustomWeekly[day].exercises.push(action.exercise);
+            localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samCustomWeekly));
 
+            // הסרה מרשימת החסימה אם התרגיל היה חסום פעם
             let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
             if (removedEx[day]) {
                 removedEx[day] = removedEx[day].filter(name => !name.toLowerCase().includes(action.exercise.name.toLowerCase()));
@@ -498,40 +502,27 @@
             loadWorkout();
         }
         else if (action.type === "REMOVE_EXERCISE" && action.exerciseName) {
-            let targetDay = action.day || document.getElementById('day-select').value;
             let query = action.exerciseName.toLowerCase().trim();
 
-            // 1. הסרה מרשימת התרגילים שהוספו
             let customEx = JSON.parse(localStorage.getItem('added_exercises') || '{}');
-            if (customEx[targetDay]) {
-                customEx[targetDay] = customEx[targetDay].filter(ex => !ex.name.toLowerCase().includes(query) && !query.includes(ex.name.toLowerCase()));
+            if (customEx[day]) {
+                customEx[day] = customEx[day].filter(ex => !ex.name.toLowerCase().includes(query) && !query.includes(ex.name.toLowerCase()));
                 localStorage.setItem('added_exercises', JSON.stringify(customEx));
             }
 
-            // 2. הסרה ישירה מהמערכת השבועית המותאמת (כולל ימי מנוחה או אימונים רגילים)
             let samCustomWeekly = JSON.parse(localStorage.getItem('sam_custom_weekly_workouts') || '{}');
-            if (samCustomWeekly[targetDay] && samCustomWeekly[targetDay].exercises) {
-                samCustomWeekly[targetDay].exercises = samCustomWeekly[targetDay].exercises.filter(ex => !ex.name.toLowerCase().includes(query) && !query.includes(ex.name.toLowerCase()));
+            if (samCustomWeekly[day] && samCustomWeekly[day].exercises) {
+                samCustomWeekly[day].exercises = samCustomWeekly[day].exercises.filter(ex => !ex.name.toLowerCase().includes(query) && !query.includes(ex.name.toLowerCase()));
                 localStorage.setItem('sam_custom_weekly_workouts', JSON.stringify(samCustomWeekly));
             }
 
-            // 3. הוספה לרשימת התרגילים המוסרים הכללית (לסינון תצוגה גורף)
             let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
-            if (!removedEx[targetDay]) removedEx[targetDay] = [];
-            if (!removedEx[targetDay].includes(action.exerciseName)) {
-                removedEx[targetDay].push(action.exerciseName);
+            if (!removedEx[day]) removedEx[day] = [];
+            if (!removedEx[day].includes(action.exerciseName)) {
+                removedEx[day].push(action.exerciseName);
             }
             localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
 
-            loadWorkout();
-        }
-        else if (action.type === "RESTORE_EXERCISE" && action.exerciseName) {
-            let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}');
-            let day = action.day || document.getElementById('day-select').value;
-            if (removedEx[day]) {
-                removedEx[day] = removedEx[day].filter(name => !name.toLowerCase().includes(action.exerciseName.toLowerCase()));
-                localStorage.setItem('removed_exercises', JSON.stringify(removedEx));
-            }
             loadWorkout();
         }
         else if (action.type === "SET_LEVEL" && action.value) {
@@ -541,39 +532,6 @@
         else if (action.type === "SET_NOTIFICATION" && action.time) {
             document.getElementById('notif-time').value = action.time;
             setDailyReminder();
-        }
-        else if (action.type === "ADD_MEAL_ITEM" && action.item) {
-            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-            let slot = action.timeSlot || 'עשר';
-            if (!customMeals[slot]) customMeals[slot] = [];
-            if (!customMeals[slot].includes(action.item)) {
-                customMeals[slot].push(action.item);
-                localStorage.setItem('custom_meals', JSON.stringify(customMeals));
-            }
-        }
-        else if (action.type === "REMOVE_MEAL_ITEM" && action.item) {
-            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-            let slot = action.timeSlot || 'עשר';
-            
-            if (customMeals[slot]) {
-                customMeals[slot] = customMeals[slot].filter(i => !i.includes(action.item));
-                localStorage.setItem('custom_meals', JSON.stringify(customMeals));
-            }
-
-            let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
-            if (!hiddenDefaults[slot]) hiddenDefaults[slot] = [];
-            hiddenDefaults[slot].push(action.item);
-            localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
-        }
-        else if (action.type === "CLEAR_MEAL_SLOT") {
-            let slot = action.timeSlot || 'עשר';
-            let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-            customMeals[slot] = [];
-            localStorage.setItem('custom_meals', JSON.stringify(customMeals));
-
-            let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
-            hiddenDefaults[slot] = ["ALL"];
-            localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
         }
     }
 
@@ -645,448 +603,23 @@
         saveChatHistory();
     }
 
-    function calculateCalories() {
-        const gender = document.getElementById('cal-gender').value;
-        const age = parseInt(document.getElementById('cal-age').value, 10);
-        const weight = parseFloat(document.getElementById('cal-weight').value);
-        const height = parseFloat(document.getElementById('cal-height').value);
-        const activity = parseFloat(document.getElementById('cal-activity').value);
-        const resultDiv = document.getElementById('calories-result');
-
-        if (!weight || !height || !age || height <= 0 || weight <= 0 || age <= 0) {
-            alert("אנא הזן את כל הנתונים בצורה תקינה!");
-            return;
-        }
-
-        let bmr = (10 * weight) + (6.25 * height) - (5 * age);
-        if (gender === 'male') {
-            bmr += 5;
-        } else {
-            bmr -= 161;
-        }
-
-        const tdee = Math.round(bmr * activity);
-        const weightLoss = tdee - 400;
-        const muscleGain = tdee + 300;
-
-        resultDiv.innerHTML = `
-            <div style="font-size: 14px; font-weight: bold; color: #059669; margin-bottom: 8px; text-align: center;">תוצאות חישוב הקלוריות שלך:</div>
-            • <b>קלוריות במנוחה (BMR):</b> כ-${Math.round(bmr)} קלוריות.<br>
-            • <b>הוצאה יומית כוללת (TDEE):</b> כ-<b>${tdee}</b> קלוריות ביום לפי רמת הפעילות שלך.<br><br>
-            <div style="background: #e6f4ea; padding: 10px; border-radius: 8px; font-size: 13px;">
-                🎯 <b>המלצות ליעדים:</b><br>
-                • שמירת משקל: כ-<b>${tdee}</b> קלוריות.<br>
-                • בניית שריר / מאסה נקייה: כ-<b>${muscleGain}</b> קלוריות.<br>
-                • ירידה מבוקרת במשקל: כ-<b>${weightLoss}</b> קלוריות.
-            </div>
-        `;
-        resultDiv.classList.remove('hidden');
-    }
-
-    let currentStreakDaysForReward = 1;
-
-    function sendRewardToMom() {
-        let periodName = "יום אחד";
-        if (currentStreakDaysForReward === 1) periodName = "יום אחד";
-        else if (currentStreakDaysForReward === 7) periodName = "שבוע";
-        else if (currentStreakDaysForReward === 14) periodName = "שבועיים";
-        else if (currentStreakDaysForReward === 30) periodName = "חודש";
-        else if (currentStreakDaysForReward === 90) periodName = "שלושה חודשים";
-        else if (currentStreakDaysForReward === 180) periodName = "חצי שנה";
-        else if (currentStreakDaysForReward === 270) periodName = "תשעה חודשים";
-        else if (currentStreakDaysForReward === 365) periodName = "שנה שלמה";
-
-        const message = `היי אמא! הגעתי ליעד רצף של ${periodName} באפליקציית הכושר "מאמן אישי" והנה רשימת פרסים שהייתי רוצה ואת יכולה לבחור אחד:\n\n1. `;
-        const encoded = encodeURIComponent(message);
-        window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
-        
-        document.getElementById('reminder-alert-box').classList.add('hidden');
-    }
-
-    function checkStreakMilestones(streak) {
-        const milestones = [1, 7, 14, 30, 90, 180, 270, 365];
-        if (milestones.includes(streak)) {
-            currentStreakDaysForReward = streak;
-            let periodName = streak === 1 ? "יום אחד" : streak === 7 ? "שבוע" : streak === 14 ? "שבועיים" : streak === 30 ? "חודש" : streak === 90 ? "שלושה חודשים" : streak === 180 ? "חצי שנה" : streak === 270 ? "תשעה חודשים" : "שנה שלמה";
-            
-            document.getElementById('reminder-alert-text').innerText = `🎉 כל הכבוד! הגעת לרצף של ${periodName} באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚`;
-            document.getElementById('reminder-alert-box').classList.remove('hidden');
-        }
-    }
-
-    function testStreakRewardNotification() {
-        playBeep(880, 0.6);
-        currentStreakDaysForReward = 1;
-        document.getElementById('reminder-alert-text').innerText = "🎉 כל הכבוד! הגעת לרצף של יום אחד באימונים! מגיע לך פרס! לחץ כאן לשליחת הודעה לאמא בוואטסאפ 💚";
-        document.getElementById('reminder-alert-box').classList.remove('hidden');
-
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("המאמן האישי 🏋️‍♂️", { body: "הגעת לרצף של יום אחד! לחץ לשליחת בקשת פרס לאמא." });
-        }
-    }
-
-    function checkAndUpdateStreak() {
-        const lastActive = localStorage.getItem('last_active_date');
-        let streak = parseInt(localStorage.getItem('user_streak') || '0', 10);
-        let userRestDays = JSON.parse(localStorage.getItem('user_rest_days') || '[2, 7]');
-
-        if (lastActive) {
-            const lastDate = new Date(lastActive);
-            const today = new Date();
-            const diffDays = Math.ceil(Math.abs(today - lastDate) / (1000 * 60 * 60 * 24));
-
-            if (diffDays > 1) {
-                let currentCheck = new Date(lastDate);
-                currentCheck.setDate(currentCheck.getDate() + 1);
-                let missedWorkout = false;
-
-                while (currentCheck < today) {
-                    let dayOfWeek = currentCheck.getDay() + 1;
-                    if (!userRestDays.includes(dayOfWeek)) {
-                        missedWorkout = true;
-                        break;
-                    }
-                    currentCheck.setDate(currentCheck.getDate() + 1);
-                }
-
-                if (missedWorkout) {
-                    streak = 0;
-                    localStorage.setItem('user_streak', '0');
-                }
-            }
-        }
-        document.getElementById('streak-display').innerText = `${streak} ימים`;
-        checkStreakMilestones(streak);
-    }
-
-    function incrementStreak() {
-        const todayStr = new Date().toDateString();
-        const lastActive = localStorage.getItem('last_active_date');
-
-        if (lastActive !== todayStr) {
-            let streak = parseInt(localStorage.getItem('user_streak') || '0', 10) + 1;
-            localStorage.setItem('user_streak', streak.toString());
-            localStorage.setItem('last_active_date', todayStr);
-            document.getElementById('streak-display').innerText = `${streak} ימים`;
-            alert(`🔥 כל הכבוד! הגדלת את ה-Streak שלך ל-${streak} ימים!`);
-            checkStreakMilestones(streak);
-        }
-    }
-
-    let currentLevel = localStorage.getItem('fitness_level') || 'level1';
-
-    function initLevelSelector() {
-        document.getElementById('workout-level-select').value = currentLevel;
-    }
-
-    function changeFitnessLevel(newLevel) {
-        currentLevel = newLevel;
-        localStorage.setItem('fitness_level', newLevel);
-        loadWorkout();
-    }
-
-    function calculateBMI() {
-        const weight = parseFloat(document.getElementById('bmi-weight').value);
-        const heightCm = parseFloat(document.getElementById('bmi-height').value);
-        const age = parseInt(document.getElementById('bmi-age').value, 10);
-        const gender = document.getElementById('bmi-gender').value;
-        const resultDiv = document.getElementById('bmi-result');
-
-        if (!weight || !heightCm || !age || heightCm <= 0 || weight <= 0 || age <= 0) {
-            alert("אנא הזן את כל הפרמטרים בצורה תקינה!");
-            return;
-        }
-
-        const heightM = heightCm / 100;
-        const bmi = (weight / (heightM * heightM)).toFixed(1);
-
-        let category = "";
-        let color = "";
-        let advice = "";
-        const isYouth = age < 18;
-
-        if (bmi < (isYouth ? 17.5 : 18.5)) {
-            category = "תת-משקל 🔵";
-            color = "#3b82f6";
-            advice = "כדאי להעשיר את התפריט היומי במזונות עשירי חלבון ופחמימות כדי לתמוך בצמיחה ובבניית מסת שריר.";
-        } else if (bmi >= (isYouth ? 17.5 : 18.5) && bmi < (isYouth ? 24 : 25)) {
-            category = "משקל תקין 🟢";
-            color = "#10b981";
-            advice = "מצויין! ה-BMI שלך בטווח התקין והבריא. תמשיך להתמיד באימונים ובתזונה המאוזנת!";
-        } else if (bmi >= (isYouth ? 24 : 25) && bmi < (isYouth ? 28 : 30)) {
-            category = "עודף משקל קל 🟡";
-            color = "#f59e0b";
-            advice = "שמירה על ה-Streak באימונים היומיים והקפדה על שתיית מים וארוחות מסודרות יעזרו לך להגיע לאיזון מושלם.";
-        } else {
-            category = "עודף משקל משמעותי 🔴";
-            color = "#ef4444";
-            advice = "מומלץ לשלב את אימוני האירובי וההליכון באפליקציה יחד עם תפריט התזונה המאוזן לרדת בהדרגה ובבטחה.";
-        }
-
-        const genderText = gender === 'male' ? 'בן' : 'בת';
-
-        resultDiv.innerHTML = `
-            <div style="font-size: 13px; color: var(--subtext); margin-bottom: 4px;">פרופיל: ${genderText}, גיל ${age}</div>
-            <div style="font-size: 14px; color: var(--subtext);">תוצאת ה-BMI שלך:</div>
-            <div style="font-size: 42px; font-weight: bold; color: ${color}; margin: 5px 0;">${bmi}</div>
-            <div style="font-size: 18px; font-weight: bold; color: ${color}; margin-bottom: 10px;">${category}</div>
-            <p style="font-size: 14px; margin: 0; text-align: right; line-height: 1.5;">${advice}</p>
-        `;
-        resultDiv.classList.remove('hidden');
-    }
-
-    function dismissReminder() {
-        document.getElementById('reminder-alert-box').classList.add('hidden');
-    }
-
-    function setDailyReminder() {
-        const time = document.getElementById('notif-time').value;
-        localStorage.setItem('reminder_time', time);
-
-        if ("Notification" in window) {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    document.getElementById('notif-status').innerText = `✓ התראה הוגדרה לשעה ${time}`;
-                } else {
-                    document.getElementById('notif-status').innerText = `✓ תזכורת הוגדרה לשעה ${time} (תוך-אפליקציה)`;
-                }
-            });
-        } else {
-            document.getElementById('notif-status').innerText = `✓ תזכורת הוגדרה לשעה ${time}`;
-        }
-    }
-
-    function getMealByTime(timeStr) {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        const totalMinutes = hours * 60 + minutes;
-
-        let customMeals = JSON.parse(localStorage.getItem('custom_meals') || '{}');
-        let hiddenDefaults = JSON.parse(localStorage.getItem('hidden_default_meals') || '{}');
-
-        let baseMeal = {};
-        let slotName = "";
-
-        if (totalMinutes >= 360 && totalMinutes < 600) {
-            slotName = "בוקר";
-            baseMeal = {
-                title: "🌅 ארוחת בוקר (לפני בית ספר)",
-                content: "• <b>אופציה 1:</b> יוגורט חלבון + בננה/תפוח + חופן אגוזים.<br>• <b>אופציה 2:</b> כוס חלב/משקה סויה + 4 כפות שיבולת שועל.<br>• <b>אופציה 3:</b> 2 פריכיות עם גבינה צהובה 9% / לבנה 5% + ירק."
-            };
-        } else if (totalMinutes >= 600 && totalMinutes < 780) {
-            slotName = "עשר";
-            baseMeal = {
-                title: "🏫 ארוחת עשר (בית ספר)",
-                content: "<b>כריכים מלחם מלא:</b><br>• טונה / חביתה / גבינה צהובה 9% / טופו."
-            };
-        } else if (totalMinutes >= 780 && totalMinutes < 960) {
-            slotName = "צהריים";
-            baseMeal = {
-                title: "🍽️ ארוחת צהריים",
-                content: "• <b>חלבון:</b> חזה עוף / שניצל / קציצות / דג / טופו.<br>• <b>פחמימה:</b> אורז / פתיתים / פסטה / בטטה."
-            };
-        } else if (totalMinutes >= 960 && totalMinutes < 1140) {
-            slotName = "אחר הצהריים";
-            baseMeal = {
-                title: "⚡ ארוחת אחר הצהריים",
-                content: "• לחם מלא עם חמאת בוטנים ובננה או מעדן חלבון."
-            };
-        } else if (totalMinutes >= 1140 && totalMinutes < 1320) {
-            slotName = "ערב";
-            baseMeal = {
-                title: "🌙 ארוחת ערב",
-                content: "• שקשוקה/חביתה + קוטג' + לחם מלא + סלט."
-            };
-        } else {
-            slotName = "לילה";
-            baseMeal = {
-                title: "💤 ארוחת לילה",
-                content: "• קוטג' / גבינה לבנה 5% + מלפפון."
-            };
-        }
-
-        if (hiddenDefaults[slotName]) {
-            if (hiddenDefaults[slotName].includes("ALL")) {
-                baseMeal.content = "הארוחה נוקתה.";
-            } else {
-                hiddenDefaults[slotName].forEach(item => {
-                    const regExp = new RegExp(`/?\\s*${item}`, 'gi');
-                    baseMeal.content = baseMeal.content.replace(regExp, '');
-                });
-            }
-        }
-
-        let itemsForThisSlot = [];
-        if (customMeals[slotName]) itemsForThisSlot = itemsForThisSlot.concat(customMeals[slotName]);
-        if (customMeals['כללי']) itemsForThisSlot = itemsForThisSlot.concat(customMeals['כללי']);
-
-        let hiddenList = hiddenDefaults[slotName] || [];
-        const filteredCustom = itemsForThisSlot.filter(i => !hiddenList.some(rem => i.includes(rem)));
-        
-        if (filteredCustom.length > 0) {
-            if (baseMeal.content === "הארוחה נוקתה.") {
-                baseMeal.content = "";
-            } else {
-                baseMeal.content += "<br>";
-            }
-            filteredCustom.forEach(item => {
-                baseMeal.content += `<br>• ${item}`;
-            });
-        }
-
-        return baseMeal;
-    }
-
     const rawWorkouts = {
         1: { title: "כוח + הליכון קצר", exercises: [
-            { name: "שכיבות סמיכה", 
-              level1: { sets: 3, work: 35, rest: 60, reps: "8-12 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 50, reps: "10-14 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 45, reps: "12-15 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 40, reps: "15-18 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "20+ חזרות" } 
-            },
-            { name: "סקוואטים", 
-              level1: { sets: 3, work: 40, rest: 60, reps: "12-15 חזרות" }, 
-              level2: { sets: 3, work: 45, rest: 50, reps: "15-18 חזרות" }, 
-              level3: { sets: 3, work: 50, rest: 45, reps: "18-20 חזרות" }, 
-              level4: { sets: 4, work: 55, rest: 40, reps: "22-25 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25+ חזרות" } 
-            },
-            { name: "לאנג'ים", 
-              level1: { sets: 3, work: 45, rest: 60, reps: "10 חזרות לכל רגל" }, 
-              level2: { sets: 3, work: 50, rest: 50, reps: "12 חזרות לכל רגל" }, 
-              level3: { sets: 3, work: 55, rest: 45, reps: "14 חזרות לכל רגל" }, 
-              level4: { sets: 4, work: 60, rest: 40, reps: "16 חזרות לכל רגל" }, 
-              level5: { sets: 4, work: 65, rest: 30, reps: "20 חזרות לכל רגל" } 
-            },
-            { name: "פלאנק", 
-              level1: { sets: 3, work: 40, rest: 45, reps: "30-45 שניות" }, 
-              level2: { sets: 3, work: 50, rest: 45, reps: "50 שניות" }, 
-              level3: { sets: 3, work: 60, rest: 40, reps: "60 שניות" }, 
-              level4: { sets: 4, work: 75, rest: 35, reps: "75 שניות" }, 
-              level5: { sets: 4, work: 90, rest: 30, reps: "90 שניות" } 
-            },
-            { name: "כפיפות בטן", 
-              level1: { sets: 3, work: 35, rest: 45, reps: "12-15 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 45, reps: "15-18 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 40, reps: "18-20 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 35, reps: "22-25 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25+ חזרות" } 
-            },
-            { name: "הליכון", 
-              level1: { sets: 1, work: 900, rest: 0, reps: "15 דקות" }, 
-              level2: { sets: 1, work: 1080, rest: 0, reps: "18 דקות" }, 
-              level3: { sets: 1, work: 1200, rest: 0, reps: "20 דקות" }, 
-              level4: { sets: 1, work: 1500, rest: 0, reps: "25 דקות" }, 
-              level5: { sets: 1, work: 1800, rest: 0, reps: "30 דקות" } 
-            }
+            { name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "8-12 חזרות" } },
+            { name: "סקוואטים", level1: { sets: 3, work: 40, rest: 60, reps: "12-15 חזרות" } }
         ]},
         2: { title: "יום מנוחה", exercises: [{ name: "מנוחה מלאה", isRestDay: true }] },
         3: { title: "אימון כוח (גוף מלא)", exercises: [
-            { name: "שכיבות סמיכה", 
-              level1: { sets: 3, work: 35, rest: 60, reps: "8-12 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 50, reps: "10-14 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 45, reps: "12-15 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 40, reps: "15-18 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "20+ חזרות" } 
-            },
-            { name: "סקוואטים", 
-              level1: { sets: 3, work: 40, rest: 60, reps: "12-15 חזרות" }, 
-              level2: { sets: 3, work: 45, rest: 50, reps: "15-18 חזרות" }, 
-              level3: { sets: 3, work: 50, rest: 45, reps: "18-20 חזרות" }, 
-              level4: { sets: 4, work: 55, rest: 40, reps: "22-25 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25+ חזרות" } 
-            },
-            { name: "לאנג'ים", 
-              level1: { sets: 3, work: 45, rest: 60, reps: "10 חזרות לכל רגל" }, 
-              level2: { sets: 3, work: 50, rest: 50, reps: "12 חזרות לכל רגל" }, 
-              level3: { sets: 3, work: 55, rest: 45, reps: "14 חזרות לכל רגל" }, 
-              level4: { sets: 4, work: 60, rest: 40, reps: "16 חזרות לכל רגל" }, 
-              level5: { sets: 4, work: 65, rest: 30, reps: "20 חזרות לכל רגל" } 
-            },
-            { name: "פלאנק", 
-              level1: { sets: 3, work: 40, rest: 45, reps: "30-45 שניות" }, 
-              level2: { sets: 3, work: 50, rest: 45, reps: "50 שניות" }, 
-              level3: { sets: 3, work: 60, rest: 40, reps: "60 שניות" }, 
-              level4: { sets: 4, work: 75, rest: 35, reps: "75 שניות" }, 
-              level5: { sets: 4, work: 90, rest: 30, reps: "90 שניות" } 
-            },
-            { name: "כפיפות בטן", 
-              level1: { sets: 3, work: 35, rest: 45, reps: "12-15 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 45, reps: "15-18 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 40, reps: "18-20 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 35, reps: "22-25 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25+ חזרות" } 
-            }
+            { name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "8-12 חזרות" } }
         ]},
         4: { title: "אירובי הליכון + בטן", exercises: [
-            { name: "הליכון בשיפוע", 
-              level1: { sets: 1, work: 1200, rest: 0, reps: "20 דקות" }, 
-              level2: { sets: 1, work: 1380, rest: 0, reps: "23 דקות" }, 
-              level3: { sets: 1, work: 1500, rest: 0, reps: "25 דקות" }, 
-              level4: { sets: 1, work: 1680, rest: 0, reps: "28 דקות" }, 
-              level5: { sets: 1, work: 1800, rest: 0, reps: "30 דקות" } 
-            },
-            { name: "פלאנק", 
-              level1: { sets: 3, work: 45, rest: 45, reps: "45 שניות" }, 
-              level2: { sets: 3, work: 50, rest: 45, reps: "50 שניות" }, 
-              level3: { sets: 3, work: 60, rest: 40, reps: "60 שניות" }, 
-              level4: { sets: 4, work: 75, rest: 35, reps: "75 שניות" }, 
-              level5: { sets: 4, work: 90, rest: 30, reps: "90 שניות" } 
-            },
-            { name: "כפיפות בטן", 
-              level1: { sets: 3, work: 35, rest: 45, reps: "15 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 45, reps: "18 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 40, reps: "20 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 35, reps: "22 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25 חזרות" } 
-            }
+            { name: "פלאנק", level1: { sets: 3, work: 45, rest: 45, reps: "45 שניות" } }
         ]},
         5: { title: "אימון כוח (גוף מלא)", exercises: [
-            { name: "שכיבות סמיכה", 
-              level1: { sets: 3, work: 35, rest: 60, reps: "8-12 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 50, reps: "10-14 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 45, reps: "12-15 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 40, reps: "15-18 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "20+ חזרות" } 
-            },
-            { name: "סקוואטים", 
-              level1: { sets: 3, work: 40, rest: 60, reps: "12-15 חזרות" }, 
-              level2: { sets: 3, work: 45, rest: 50, reps: "15-18 חזרות" }, 
-              level3: { sets: 3, work: 50, rest: 45, reps: "18-20 חזרות" }, 
-              level4: { sets: 4, work: 55, rest: 40, reps: "22-25 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25+ חזרות" } 
-            },
-            { name: "לאנג'ים", 
-              level1: { sets: 3, work: 45, rest: 60, reps: "10 חזרות לכל רגל" }, 
-              level2: { sets: 3, work: 50, rest: 50, reps: "12 חזרות לכל רגל" }, 
-              level3: { sets: 3, work: 55, rest: 45, reps: "14 חזרות לכל רגל" }, 
-              level4: { sets: 4, work: 60, rest: 40, reps: "16 חזרות לכל רגל" }, 
-              level5: { sets: 4, work: 65, rest: 30, reps: "20 חזרות לכל רגל" } 
-            },
-            { name: "פלאנק", 
-              level1: { sets: 3, work: 40, rest: 45, reps: "30-45 שניות" }, 
-              level2: { sets: 3, work: 50, rest: 45, reps: "50 שניות" }, 
-              level3: { sets: 3, work: 60, rest: 40, reps: "60 שניות" }, 
-              level4: { sets: 4, work: 75, rest: 35, reps: "75 שניות" }, 
-              level5: { sets: 4, work: 90, rest: 30, reps: "90 שניות" } 
-            },
-            { name: "הרמות ברכיים", 
-              level1: { sets: 3, work: 35, rest: 45, reps: "12-15 חזרות" }, 
-              level2: { sets: 3, work: 40, rest: 45, reps: "15-18 חזרות" }, 
-              level3: { sets: 3, work: 45, rest: 40, reps: "18-20 חזרות" }, 
-              level4: { sets: 4, work: 50, rest: 35, reps: "22-25 חזרות" }, 
-              level5: { sets: 4, work: 60, rest: 30, reps: "25+ חזרות" } 
-            }
+            { name: "שכיבות סמיכה", level1: { sets: 3, work: 35, rest: 60, reps: "8-12 חזרות" } }
         ]},
         6: { title: "אימון הליכון בשיפוע", exercises: [
-            { name: "הליכון בשיפוע / הפוגות", 
-              level1: { sets: 1, work: 1500, rest: 0, reps: "25 דקות" }, 
-              level2: { sets: 1, work: 1680, rest: 0, reps: "28 דקות" }, 
-              level3: { sets: 1, work: 1800, rest: 0, reps: "30 דקות" }, 
-              level4: { sets: 1, work: 2100, rest: 0, reps: "35 דקות" }, 
-              level5: { sets: 1, work: 2400, rest: 0, reps: "40 דקות" } 
-            }
+            { name: "הליכון בשיפוע", level1: { sets: 1, work: 1500, rest: 0, reps: "25 דקות" } }
         ]},
         7: { title: "יום מנוחה מוחלטת", exercises: [{ name: "מנוחה", isRestDay: true }] }
     };
@@ -1105,15 +638,6 @@
         if(screenId === 'sam-screen') loadChatHistory();
     }
 
-    function calculateMeal() {
-        const timeValue = document.getElementById('time-input').value;
-        if (!timeValue) return;
-        const meal = getMealByTime(timeValue);
-        const resultDiv = document.getElementById('meal-result');
-        resultDiv.innerHTML = `<h3>${meal.title}</h3><p>${meal.content}</p>`;
-        resultDiv.classList.remove('hidden');
-    }
-
     function loadWorkout() {
         const day = parseInt(document.getElementById('day-select').value, 10);
         
@@ -1124,13 +648,20 @@
         let addedEx = JSON.parse(localStorage.getItem('added_exercises') || '{}')[day] || [];
 
         const container = document.getElementById('workout-list');
-        
         let html = `<h3 style="margin-top:15px;">${data.title}</h3>`;
         
-        let baseExercises = (data.exercises && Array.isArray(data.exercises)) ? data.exercises : [];
-        let exercisesToDisplay = [...baseExercises];
+        let exercisesToDisplay = [...(data.exercises || [])];
         
-        // סינון תרגילים שהוסרו מתוך כל רשימות הבסיס / המערכת
+        // הוספת תרגילים אישיים
+        if (Array.isArray(addedEx)) {
+            addedEx.forEach(ex => {
+                if (ex && ex.name && !exercisesToDisplay.some(e => e.name.toLowerCase() === ex.name.toLowerCase())) {
+                    exercisesToDisplay.push(ex);
+                }
+            });
+        }
+
+        // סינון תרגילים שהוסרו
         exercisesToDisplay = exercisesToDisplay.filter(ex => {
             if (!ex || !ex.name) return false;
             let exLower = ex.name.toLowerCase();
@@ -1139,32 +670,6 @@
                 return exLower.includes(remLower) || remLower.includes(exLower);
             });
         });
-
-        // הוספת תרגילים שנוספו באופן אישי (תוך התחשבות ברשימת ההסרות)
-        if (Array.isArray(addedEx)) {
-            addedEx.forEach(ex => {
-                if (!ex || !ex.name) return;
-                let exLower = ex.name.toLowerCase();
-                let isRemoved = removedEx.some(remName => {
-                    let remLower = remName.toLowerCase();
-                    return exLower.includes(remLower) || remLower.includes(exLower);
-                });
-                if (isRemoved) return;
-
-                if (!exercisesToDisplay.some(e => e.name.toLowerCase() === exLower)) {
-                    let lvlObj = {};
-                    lvlObj[currentLevel] = { sets: ex.sets || 3, work: ex.work || 40, rest: ex.rest || 45, reps: ex.reps || "12 חזרות" };
-                    exercisesToDisplay.push({
-                        name: ex.name,
-                        level1: lvlObj.level1 || lvlObj[currentLevel],
-                        level2: lvlObj.level2 || lvlObj[currentLevel],
-                        level3: lvlObj.level3 || lvlObj[currentLevel],
-                        level4: lvlObj.level4 || lvlObj[currentLevel],
-                        level5: lvlObj.level5 || lvlObj[currentLevel]
-                    });
-                }
-            });
-        }
 
         if (exercisesToDisplay.length === 0) {
             html += `<div style="text-align:center; padding:20px; color:var(--subtext);">אין תרגילים מוגדרים ליום זה.</div>`;
@@ -1180,14 +685,14 @@
                         </div>
                     `;
                 } else {
-                    const lvlData = ex[currentLevel] || ex.level1 || { sets: ex.sets || 3, work: ex.work || 30, rest: ex.rest || 45, reps: ex.reps || "10 חזרות" };
+                    let lvlData = ex[currentLevel] || ex.level1 || { sets: ex.sets || 3, work: ex.work || 30, rest: ex.rest || 45, reps: ex.reps || "10 חזרות" };
                     html += `
                         <div class="exercise-item">
                             <div class="exercise-info">
                                 <span class="exercise-title">${ex.name}</span>
-                                <span class="exercise-sub">${lvlData.sets} סטים x ${lvlData.reps}</span>
+                                <span class="exercise-sub">${lvlData.sets || 3} סטים x ${lvlData.reps || "10 חזרות"}</span>
                             </div>
-                            <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startCustomWorkoutRoutine('${ex.name}', ${lvlData.sets}, ${lvlData.work}, ${lvlData.rest})">התחל</button>
+                            <button class="btn btn-accent" style="width:auto; padding: 8px 16px; font-size:14px;" onclick="startCustomWorkoutRoutine('${ex.name}', ${lvlData.sets || 3}, ${lvlData.work || 30}, ${lvlData.rest || 45})">התחל</button>
                         </div>
                     `;
                 }
@@ -1196,124 +701,11 @@
         container.innerHTML = html;
     }
 
-    let timerInterval = null;
-    let currentSet = 1;
-    let totalSets = 3;
-    let workSec = 30;
-    let restSec = 60;
-
-    function startCustomWorkoutRoutine(name, sets, work, rest) {
-        dismissReminder();
-        currentSet = 1;
-        totalSets = sets || 3;
-        workSec = work || 30;
-        restSec = rest || 45;
-
-        document.getElementById('timer-modal').classList.remove('hidden');
-        document.getElementById('timer-title').innerText = name;
-        startPrepPhase();
-    }
-
-    function startPrepPhase() {
-        if (timerInterval) clearInterval(timerInterval);
-        document.getElementById('set-counter').innerText = `סט ${currentSet} מתוך ${totalSets}`;
-        document.getElementById('timer-status').innerText = "התכונן למאמץ! 🔥";
-        document.getElementById('timer-display').className = "timer-display work";
-        
-        let prepLeft = 3;
-        updateTimerDisplay(prepLeft);
-
-        timerInterval = setInterval(() => {
-            prepLeft--;
-            updateTimerDisplay(prepLeft);
-            if (prepLeft <= 0) {
-                clearInterval(timerInterval);
-                playBeep(880, 0.4);
-                startWorkPhase();
-            }
-        }, 1000);
-    }
-
-    function startWorkPhase() {
-        document.getElementById('timer-status').innerText = "בצע את הסט עכשיו! 💪";
-        document.getElementById('timer-display').className = "timer-display work";
-
-        let timeLeft = workSec;
-        updateTimerDisplay(timeLeft);
-
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerDisplay(timeLeft);
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                playBeep(440, 0.5);
-
-                if (currentSet < totalSets && restSec > 0) {
-                    startRestPhase();
-                } else {
-                    finishExercise();
-                }
-            }
-        }, 1000);
-    }
-
-    function startRestPhase() {
-        document.getElementById('timer-status').innerText = "זמן מנוחה ☕";
-        document.getElementById('timer-display').className = "timer-display rest";
-
-        let timeLeft = restSec;
-        updateTimerDisplay(timeLeft);
-
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerDisplay(timeLeft);
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                currentSet++;
-                playBeep(660, 0.4);
-                startPrepPhase();
-            }
-        }, 1000);
-    }
-
-    function finishExercise() {
-        document.getElementById('timer-status').innerText = "כל הכבוד! סיימת את התרגיל 🎉";
-        document.getElementById('timer-display').innerText = "✓";
-        document.getElementById('timer-display').className = "timer-display rest";
-        playBeep(880, 0.8);
-        incrementStreak();
-    }
-
-    function updateTimerDisplay(sec) {
-        const m = Math.floor(sec / 60).toString().padStart(2, '0');
-        const s = (sec % 60).toString().padStart(2, '0');
-        document.getElementById('timer-display').innerText = `${m}:${s}`;
-    }
-
-    function closeTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        document.getElementById('timer-modal').classList.add('hidden');
-    }
-
-    function playBeep(freq = 600, duration = 0.5) {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = "sine";
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
-        } catch(e) {}
-    }
+    let currentLevel = localStorage.getItem('fitness_level') || 'level1';
+    function initLevelSelector() { document.getElementById('workout-level-select').value = currentLevel; }
+    function changeFitnessLevel(newLevel) { currentLevel = newLevel; localStorage.setItem('fitness_level', newLevel); loadWorkout(); }
 
     initLevelSelector();
-    checkAndUpdateStreak();
     loadChatHistory();
 </script>
 </body>
