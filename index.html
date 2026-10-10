@@ -472,9 +472,11 @@
             localStorage.setItem('hidden_default_meals', JSON.stringify(hiddenDefaults));
         }
         else if (action.type === "SWAP_REST_DAY" && action.restDay) {
-            let scheduleChanges = JSON.parse(localStorage.getItem('custom_workout_schedule') || '{}');
-            scheduleChanges[action.restDay] = { title: "יום מנוחה", exercises: [{ name: "מנוחה", isRestDay: true }] };
-            localStorage.setItem('custom_workout_schedule', JSON.stringify(scheduleChanges));
+            let restDays = JSON.parse(localStorage.getItem('custom_rest_days') || '[]');
+            if (!restDays.includes(action.restDay)) {
+                restDays.push(action.restDay);
+                localStorage.setItem('custom_rest_days', JSON.stringify(restDays));
+            }
             loadWorkout();
         }
         else if (action.type === "ADD_EXERCISE" && action.exercise) {
@@ -1026,9 +1028,15 @@
     }
 
     function loadWorkout() {
-        const day = document.getElementById('day-select').value;
-        let scheduleChanges = JSON.parse(localStorage.getItem('custom_workout_schedule') || '{}');
-        let data = scheduleChanges[day] || rawWorkouts[day] || rawWorkouts[1];
+        const day = parseInt(document.getElementById('day-select').value, 10);
+        let restDays = JSON.parse(localStorage.getItem('custom_rest_days') || '[]');
+        
+        let data;
+        if (restDays.includes(day)) {
+            data = { title: "יום מנוחה מותאם אישית", exercises: [{ name: "מנוחה", isRestDay: true }] };
+        } else {
+            data = rawWorkouts[day] || rawWorkouts[1];
+        }
         
         let removedEx = JSON.parse(localStorage.getItem('removed_exercises') || '{}')[day] || [];
         let addedEx = JSON.parse(localStorage.getItem('added_exercises') || '{}')[day] || [];
