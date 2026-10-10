@@ -1,7 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // הגדלת המגבלת גודל בקשה
+    },
+  },
+};
+
 export default async function handler(req, res) {
-  // הגדרת CORS כדי שהאפליקציה תוכל לפנות לשרת מכל מקום
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -16,14 +23,11 @@ export default async function handler(req, res) {
 
   try {
     const { message, image } = req.body;
-
-    // חיבור למפתח ה-API מתוך הגדרות השרת ב-Vercel
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     let promptParts = [];
 
-    // אם נשלחה תמונה - ממירים אותה לפורמט שהמודל מקבל
     if (image) {
       const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
       promptParts.push({
@@ -34,8 +38,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // הוספת הטקסט לערכה
-    promptParts.push(message || "נתח את התמונה הזו");
+    promptParts.push(message || "נתח את תמונת האוכל הזו ותן הערכה קלורית משוערת בקצרה בעברית.");
 
     const result = await model.generateContent(promptParts);
     const responseText = result.response.text();
